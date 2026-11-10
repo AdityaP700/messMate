@@ -103,6 +103,77 @@
           </div>
         </div>
 
+        <div class="card mb-20">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Food Waste, Kitchen Prep &amp; Redressal Estimation</h3>
+              <p class="card-subtitle">Real-time consumption, skip savings, historical no-show projection (<span id="ana-noshow-rate">0</span>%), and grievance SLA</p>
+            </div>
+            <span class="badge badge-success" id="ana-prevention-badge">Prevention: 0%</span>
+          </div>
+
+          <div class="stats-grid" style="margin-bottom: 16px;">
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">CONSUMPTION / PREP</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; margin-top: 4px;">
+                <span id="ana-ate">0</span> ate &middot; <span id="ana-prep">0</span> prep
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                <span id="ana-skipped">0</span> skipped &middot; <span id="ana-leave">0</span> on leave &middot; <span id="ana-active">0</span> upcoming
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">FOOD SAVED BY SKIPS</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 4px;">
+                <span id="ana-saved-kg">0</span> kg
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                Est. value saved: <strong id="ana-saved-inr">₹0</strong> (<span id="ana-saved-portions">0</span> portions)
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">PROJECTED UNCLAIMED WASTE</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; color: var(--danger); margin-top: 4px;">
+                <span id="ana-waste-kg">0</span> kg
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                Est. loss: <strong id="ana-waste-inr">₹0</strong> (<span id="ana-waste-portions">0</span> portions)
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">COMPLAINT REDRESSAL</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; margin-top: 4px;">
+                <span id="ana-redressal-pct">0</span>% resolved
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                <span id="ana-comp-resolved">0</span>/<span id="ana-comp-total">0</span> closed &middot; Avg <span id="ana-avg-hours">0</span>h SLA
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Meal Slot</th>
+                  <th>Ate</th>
+                  <th>Skipped</th>
+                  <th>On Leave</th>
+                  <th>Recommended Cook</th>
+                  <th>Saved (kg)</th>
+                  <th>Projected Waste (kg)</th>
+                </tr>
+              </thead>
+              <tbody id="ana-meal-tbody">
+                <tr><td colspan="7" class="text-center text-muted">Loading waste &amp; kitchen estimation...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="grid-2">
           <div class="card">
             <div class="card-header">
@@ -353,9 +424,57 @@
         document.getElementById('bar-lunch').style.width = `${(l / max) * 100}%`;
         document.getElementById('bar-snacks').style.width = `${(s / max) * 100}%`;
         document.getElementById('bar-dinner').style.width = `${(d / max) * 100}%`;
+
+        renderWasteAnalytics(data.analytics);
       } catch (err) {
         console.error('Stats load error:', err);
       }
+    }
+
+    function renderWasteAnalytics(ana) {
+      if (!ana || !ana.totals) return;
+      const t = ana.totals;
+      const c = ana.complaints || {};
+
+      document.getElementById('ana-noshow-rate').textContent = ana.historical_no_show_rate_pct ?? 0;
+      document.getElementById('ana-prevention-badge').textContent = `Prevention: ${t.waste_prevention_pct ?? 0}%`;
+
+      document.getElementById('ana-ate').textContent = t.ate ?? 0;
+      document.getElementById('ana-prep').textContent = t.recommended_prep_portions ?? 0;
+      document.getElementById('ana-skipped').textContent = t.skipped ?? 0;
+      document.getElementById('ana-leave').textContent = t.on_leave ?? 0;
+      document.getElementById('ana-active').textContent = t.active_upcoming ?? 0;
+
+      document.getElementById('ana-saved-kg').textContent = Number(t.food_saved_kg || 0).toFixed(1);
+      document.getElementById('ana-saved-inr').textContent = formatCurrency(t.money_saved_inr || 0);
+      document.getElementById('ana-saved-portions').textContent = t.saved_portions ?? 0;
+
+      document.getElementById('ana-waste-kg').textContent = Number(t.projected_waste_kg || 0).toFixed(1);
+      document.getElementById('ana-waste-inr').textContent = formatCurrency(t.projected_waste_inr || 0);
+      document.getElementById('ana-waste-portions').textContent = t.projected_wasted_portions ?? 0;
+
+      document.getElementById('ana-redressal-pct').textContent = c.redressal_rate_pct ?? 0;
+      document.getElementById('ana-comp-resolved').textContent = c.resolved ?? 0;
+      document.getElementById('ana-comp-total').textContent = c.total ?? 0;
+      document.getElementById('ana-avg-hours').textContent = c.avg_resolution_hours ?? 0;
+
+      const byMeal = ana.by_meal || {};
+      const order = ['breakfast', 'lunch', 'snacks', 'dinner'];
+      document.getElementById('ana-meal-tbody').innerHTML = order.map(m => {
+        const row = byMeal[m] || {};
+        const label = m.charAt(0).toUpperCase() + m.slice(1);
+        return `
+          <tr>
+            <td><strong>${label}</strong></td>
+            <td class="tabular-nums">${row.ate ?? 0}</td>
+            <td class="tabular-nums">${row.skipped ?? 0}</td>
+            <td class="tabular-nums">${row.on_leave ?? 0}</td>
+            <td class="tabular-nums"><strong>${row.recommended_cook ?? 0}</strong> plates</td>
+            <td class="tabular-nums" style="color: var(--accent);">${Number(row.food_saved_kg || 0).toFixed(1)} kg</td>
+            <td class="tabular-nums" style="color: var(--danger);">${Number(row.projected_waste_kg || 0).toFixed(1)} kg</td>
+          </tr>
+        `;
+      }).join('');
     }
   </script>
 </body>

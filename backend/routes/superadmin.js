@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { isAuthenticated, hasRole } = require('../middleware/auth');
 const { getTodayIST } = require('../utils/time');
+const { computeAnalytics } = require('../utils/analytics');
 
 // All routes require superadmin role
 router.use(isAuthenticated, hasRole('superadmin'));
@@ -247,6 +248,8 @@ router.get('/stats/overview', async (req, res) => {
        FROM complaints`
     );
 
+    const today_analytics = await computeAnalytics(today);
+
     return res.status(200).json({
       total_students: userCounts[0].total_students || 0,
       total_admins: userCounts[0].total_admins || 0,
@@ -254,7 +257,8 @@ router.get('/stats/overview', async (req, res) => {
       total_coupons_sold: couponsRows[0].total_coupons || 0,
       total_meals_served: totalUsed,
       avg_daily_attendance: avgDailyAttendance,
-      complaints: compRows[0]
+      complaints: compRows[0],
+      today_analytics
     });
   } catch (err) {
     console.error('Stats overview error:', err);

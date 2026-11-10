@@ -3,61 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In - IIIT Bhubaneswar Mess Management System</title>
+  <title>Sign In - IIIT Bhubaneswar Mess Portal</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="auth-wrapper">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="auth-logo" data-icon="brand"></div>
-        <h1 class="auth-title">IIIT Bhubaneswar Mess</h1>
-        <p class="auth-subtitle">Sign in to manage dining coupons, menu, and leave</p>
-        <p class="handwritten" style="font-size: 20px; color: var(--primary); margin-top: 6px;">Fresh meals, zero paper queues.</p>
+  <div class="auth-showcase-outer">
+    <div class="auth-showcase-canvas">
+      <div class="flex justify-between items-center">
+        <div class="auth-top-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            <div class="auth-top-brand-title">IIIT Bhubaneswar</div>
+            <div class="auth-top-brand-sub">Mess Management</div>
+          </div>
+        </div>
       </div>
 
-      <form id="login-form">
-        <div class="form-group">
-          <label class="form-label" for="identifier">Roll Number or Email</label>
-          <input
-            type="text"
-            id="identifier"
-            class="form-input"
-            placeholder="e.g. B121001 or dean@iiitbbsr.ac.in"
-            required
-            autocomplete="username"
-          >
+      <div class="auth-left-stage">
+        <div class="auth-float-card">
+          <div class="auth-header">
+            <h1 class="auth-title">Portal Login</h1>
+            <p class="auth-subtitle">Please enter your details</p>
+            <p class="handwritten" style="font-size: 19px; color: var(--primary); margin-top: 4px;">Fresh meals, zero queues.</p>
+          </div>
+
+          <form id="login-form">
+            <div class="form-group">
+              <label class="form-label" for="identifier">Roll Number or Email</label>
+              <input
+                type="text"
+                id="identifier"
+                class="form-input"
+                placeholder="B122001 or dean@iiitbbsr.ac.in"
+                required
+                autocomplete="username"
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                class="form-input"
+                placeholder="Enter your password"
+                required
+                autocomplete="current-password"
+              >
+            </div>
+
+            <button type="submit" id="login-btn" class="auth-dark-btn" style="margin-top: 6px;">
+              Sign in
+            </button>
+          </form>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            class="form-input"
-            placeholder="Enter your password"
-            required
-            autocomplete="current-password"
-          >
+        <div class="auth-bottom-link">
+          Are you new? <a href="/register.html">Create an Account</a>
         </div>
 
-        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 10px 16px;">
-          Sign In
-        </button>
-      </form>
-
-      <div style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
-        New student? <a href="/register.html" style="font-weight: 600;">Create an account</a>
+        <div class="demo-creds-row">
+          <span style="font-size: 11px; font-weight: 600; color: #475569;">Quick Fill:</span>
+          <button type="button" class="demo-chip" onclick="fillCreds('B122001', 'student123')">Student (B122001)</button>
+          <button type="button" class="demo-chip" onclick="fillCreds('REP001', 'admin123')">Mess Rep (REP001)</button>
+          <button type="button" class="demo-chip" onclick="fillCreds('dean@iiitbbsr.ac.in', 'admin123')">Dean (ADMIN001)</button>
+        </div>
       </div>
 
-      <div style="margin-top: 22px; padding: 10px 12px; background: var(--glass-subtle); border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; color: var(--text-muted); text-align: center;">
-        Default Superadmin: <code>dean@iiitbbsr.ac.in</code> / <code>admin123</code>
-      </div>
+      <div></div>
     </div>
   </div>
 
   <script src="/js/app.js"></script>
   <script>
+    function fillCreds(id, pass) {
+      document.getElementById('identifier').value = id;
+      document.getElementById('password').value = pass;
+      showToast('Demo credentials filled. Click Sign in.', 'info', 2500);
+    }
+
     (async () => {
       try {
         const data = await api('/api/auth/me');
@@ -93,17 +117,13 @@
 
         showToast('Login successful. Redirecting...', 'success');
         setTimeout(() => {
-          if (data.user.role === 'student') {
-            window.location.href = '/student/dashboard.html';
-          } else if (data.user.role === 'admin') {
-            window.location.href = '/admin/dashboard.html';
-          } else if (data.user.role === 'superadmin') {
-            window.location.href = '/superadmin/dashboard.html';
-          }
+          if (data.user.role === 'student') window.location.href = '/student/dashboard.html';
+          else if (data.user.role === 'admin') window.location.href = '/admin/dashboard.html';
+          else if (data.user.role === 'superadmin') window.location.href = '/superadmin/dashboard.html';
         }, 400);
       } catch (err) {
         loginBtn.disabled = false;
-        loginBtn.textContent = 'Sign In';
+        loginBtn.textContent = 'Sign in';
       }
     });
   </script>

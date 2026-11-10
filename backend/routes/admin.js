@@ -7,6 +7,7 @@ const {
   getCurrentOrUpcomingMeal,
   MEAL_SCHEDULE
 } = require('../utils/time');
+const { computeAnalytics } = require('../utils/analytics');
 
 // All routes require admin or superadmin
 router.use(isAuthenticated, hasRole('admin', 'superadmin'));
@@ -593,13 +594,17 @@ router.get('/dashboard/stats', async (req, res) => {
       [today]
     );
 
+    // 6. Food waste & consumption projection analytics
+    const analytics = await computeAnalytics(today);
+
     return res.status(200).json({
       date: today,
       meals_served: mealsServed,
       total_students: studentsCount[0].count,
       pending_payments: paymentsCount[0].count,
       open_complaints: complaintsCount[0].count,
-      total_skips: skipsCount[0].count
+      total_skips: skipsCount[0].count,
+      analytics
     });
   } catch (err) {
     console.error('Dashboard stats error:', err);
@@ -690,8 +695,9 @@ router.get('/reports/daily', async (req, res) => {
     );
 
     const [reportRows] = await db.query('SELECT * FROM daily_reports WHERE report_date = ?', [reportDate]);
+    const waste_analytics = await computeAnalytics(reportDate);
 
-    return res.status(200).json({ report: reportRows[0] });
+    return res.status(200).json({ report: reportRows[0], waste_analytics });
   } catch (err) {
     console.error('Daily report error:', err);
     return res.status(500).json({ error: 'Failed to generate or retrieve daily report.' });

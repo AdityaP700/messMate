@@ -101,18 +101,28 @@
 
             <div class="flex justify-between items-center" style="padding: 18px 0;">
               <div style="text-align: center; flex: 1;">
-                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--text-main);" id="comp-total">0</div>
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--text-main);" id="comp-total">0</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Total Lodged</div>
               </div>
               <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
               <div style="text-align: center; flex: 1;">
-                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--danger);" id="comp-open">0</div>
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--danger);" id="comp-open">0</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Open</div>
               </div>
               <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
               <div style="text-align: center; flex: 1;">
-                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--accent);" id="comp-resolved">0</div>
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--accent);" id="comp-resolved">0</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Resolved</div>
+              </div>
+              <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
+              <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--primary);" id="comp-redressal-rate">0%</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Redressal Rate</div>
+              </div>
+              <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
+              <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--text-main);" id="comp-avg-hours">0h</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Avg Resolution</div>
               </div>
             </div>
           </div>
@@ -148,6 +158,77 @@
             </div>
           </div>
         </div>
+
+        <div class="card mt-20">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Daily Food Consumption, Skips &amp; Waste Projection</h3>
+              <p class="card-subtitle">Estimated sustainability savings and projected unclaimed food waste across all hostels (<span id="sa-ana-noshow">0</span>% historical no-show baseline)</p>
+            </div>
+            <span class="badge badge-success" id="sa-prevention-badge">Prevention: 0%</span>
+          </div>
+
+          <div class="stats-grid" style="margin-bottom: 16px;">
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">ATE / SKIPPED / LEAVE</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; margin-top: 4px;">
+                <span id="sa-ate">0</span> ate &middot; <span id="sa-skipped">0</span> skipped
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                <span id="sa-leave">0</span> on leave &middot; <span id="sa-active">0</span> upcoming active
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">FOOD SAVED TODAY</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 4px;">
+                <span id="sa-saved-kg">0</span> kg
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                Est. value retained: <strong id="sa-saved-inr">₹0</strong>
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">PROJECTED UNCLAIMED WASTE</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; color: var(--danger); margin-top: 4px;">
+                <span id="sa-waste-kg">0</span> kg
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                Est. avoidable loss: <strong id="sa-waste-inr">₹0</strong> (<span id="sa-waste-portions">0</span> portions)
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);">
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">RECOMMENDED KITCHEN PREP</div>
+              <div class="tabular-nums" style="font-size: 18px; font-weight: 700; margin-top: 4px;">
+                <span id="sa-prep">0</span> portions
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                Adjusted for declared skips &amp; approved leave
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Meal Slot</th>
+                  <th>Ate</th>
+                  <th>Skipped</th>
+                  <th>On Leave</th>
+                  <th>Recommended Cook</th>
+                  <th>Saved (kg)</th>
+                  <th>Projected Waste (kg)</th>
+                </tr>
+              </thead>
+              <tbody id="sa-meal-tbody">
+                <tr><td colspan="7" class="text-center text-muted">Loading waste projection...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -168,9 +249,45 @@
         document.getElementById('stat-avg-attendance').textContent = data.avg_daily_attendance;
 
         const c = data.complaints || {};
+        const ana = data.today_analytics || {};
+        const ac = ana.complaints || {};
         document.getElementById('comp-total').textContent = c.total_complaints || 0;
         document.getElementById('comp-open').textContent = c.open_complaints || 0;
         document.getElementById('comp-resolved').textContent = c.resolved_complaints || 0;
+        document.getElementById('comp-redressal-rate').textContent = `${ac.redressal_rate_pct ?? 0}%`;
+        document.getElementById('comp-avg-hours').textContent = `${ac.avg_resolution_hours ?? 0}h`;
+
+        const t = ana.totals || {};
+        document.getElementById('sa-ana-noshow').textContent = ana.historical_no_show_rate_pct ?? 0;
+        document.getElementById('sa-prevention-badge').textContent = `Prevention: ${t.waste_prevention_pct ?? 0}%`;
+        document.getElementById('sa-ate').textContent = t.ate ?? 0;
+        document.getElementById('sa-skipped').textContent = t.skipped ?? 0;
+        document.getElementById('sa-leave').textContent = t.on_leave ?? 0;
+        document.getElementById('sa-active').textContent = t.active_upcoming ?? 0;
+        document.getElementById('sa-saved-kg').textContent = Number(t.food_saved_kg || 0).toFixed(1);
+        document.getElementById('sa-saved-inr').textContent = formatCurrency(t.money_saved_inr || 0);
+        document.getElementById('sa-waste-kg').textContent = Number(t.projected_waste_kg || 0).toFixed(1);
+        document.getElementById('sa-waste-inr').textContent = formatCurrency(t.projected_waste_inr || 0);
+        document.getElementById('sa-waste-portions').textContent = t.projected_wasted_portions ?? 0;
+        document.getElementById('sa-prep').textContent = t.recommended_prep_portions ?? 0;
+
+        const byMeal = ana.by_meal || {};
+        const order = ['breakfast', 'lunch', 'snacks', 'dinner'];
+        document.getElementById('sa-meal-tbody').innerHTML = order.map(m => {
+          const row = byMeal[m] || {};
+          const label = m.charAt(0).toUpperCase() + m.slice(1);
+          return `
+            <tr>
+              <td><strong>${label}</strong></td>
+              <td class="tabular-nums">${row.ate ?? 0}</td>
+              <td class="tabular-nums">${row.skipped ?? 0}</td>
+              <td class="tabular-nums">${row.on_leave ?? 0}</td>
+              <td class="tabular-nums"><strong>${row.recommended_cook ?? 0}</strong> plates</td>
+              <td class="tabular-nums" style="color: var(--accent);">${Number(row.food_saved_kg || 0).toFixed(1)} kg</td>
+              <td class="tabular-nums" style="color: var(--danger);">${Number(row.projected_waste_kg || 0).toFixed(1)} kg</td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         console.error('Superadmin stats load error:', err);
       }

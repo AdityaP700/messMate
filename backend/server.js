@@ -10,6 +10,7 @@ dotenv.config();
 
 const db = require('./config/db');
 const { getTodayIST } = require('./utils/time');
+const { seedMockData } = require('./scripts/seedMockData');
 
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
@@ -128,6 +129,11 @@ async function ensureExtraTables() {
           'Prepaid coupons, meal skips (60 min cutoff), leave pauses, and real-time meal ratings are now live.'
         ]
       );
+    }
+
+    const [userCount] = await db.query('SELECT COUNT(*) AS cnt FROM users');
+    if (userCount[0].cnt <= 1 && process.env.DISABLE_DEMO_SEED !== 'true') {
+      await seedMockData();
     }
   } catch (err) {
     console.error('[Init] Schema sync skipped:', err.code || err.message);

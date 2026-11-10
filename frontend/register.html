@@ -3,72 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Registration - IIIT Bhubaneswar Mess</title>
+  <title>Create Account - IIIT Bhubaneswar Mess</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="auth-wrapper">
-    <div class="auth-card" style="max-width: 480px;">
-      <div class="auth-header">
-        <div class="auth-logo" data-icon="brand"></div>
-        <h1 class="auth-title">Create Student Account</h1>
-        <p class="auth-subtitle">Register with your IIIT Bhubaneswar roll number</p>
-        <p class="handwritten" style="font-size: 19px; color: var(--primary); margin-top: 4px;">Your digital mess card in 30 seconds.</p>
+  <div class="auth-showcase-outer">
+    <div class="auth-showcase-canvas">
+      <div class="flex justify-between items-center">
+        <div class="auth-top-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            <div class="auth-top-brand-title">IIIT Bhubaneswar</div>
+            <div class="auth-top-brand-sub">Mess Management</div>
+          </div>
+        </div>
       </div>
 
-      <form id="register-form">
-        <div class="form-group">
-          <label class="form-label" for="name">Full Name *</label>
-          <input type="text" id="name" class="form-input" placeholder="e.g. Aditya Pattanayak" required>
+      <div class="auth-left-stage" style="max-width: 440px;">
+        <div class="auth-float-card">
+          <div class="auth-header" style="margin-bottom: 18px;">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Register with your IIIT Bhubaneswar roll number</p>
+            <p class="handwritten" style="font-size: 18px; color: var(--primary); margin-top: 3px;">Your digital mess card in 30 seconds.</p>
+          </div>
+
+          <form id="register-form">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" for="name">Full Name *</label>
+              <input type="text" id="name" class="form-input" placeholder="e.g. Aditya Pattanayak" required>
+            </div>
+
+            <div class="grid-2" style="gap: 10px;">
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="roll_no">Roll Number *</label>
+                <input type="text" id="roll_no" class="form-input" placeholder="e.g. B122101" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="email">Institute Email *</label>
+                <input type="email" id="email" class="form-input" placeholder="b122101@iiitbbsr.ac.in" required>
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap: 10px;">
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="hostel">Hostel *</label>
+                <select id="hostel" class="form-select" required>
+                  <option value="">Select Hostel</option>
+                  <option value="BH1">Boys Hostel 1 (BH1)</option>
+                  <option value="BH2">Boys Hostel 2 (BH2)</option>
+                  <option value="BH3">Boys Hostel 3 (BH3)</option>
+                  <option value="GH1">Girls Hostel 1 (GH1)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="room_no">Room Number</label>
+                <input type="text" id="room_no" class="form-input" placeholder="e.g. 204">
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap: 10px;">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" for="password">Password *</label>
+                <input type="password" id="password" class="form-input" placeholder="Min 6 chars" required minlength="6">
+              </div>
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" for="confirm_password">Confirm *</label>
+                <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter" required minlength="6">
+              </div>
+            </div>
+
+            <button type="submit" id="reg-btn" class="auth-dark-btn">
+              Create Account
+            </button>
+          </form>
         </div>
 
-        <div class="grid-2" style="gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="roll_no">Roll Number *</label>
-            <input type="text" id="roll_no" class="form-input" placeholder="e.g. B121001" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="email">Institute Email *</label>
-            <input type="email" id="email" class="form-input" placeholder="e.g. b121001@iiit-bh.ac.in" required>
-          </div>
+        <div class="auth-bottom-link">
+          Already registered? <a href="/index.html">Sign in</a>
         </div>
-
-        <div class="grid-2" style="gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="hostel">Hostel *</label>
-            <select id="hostel" class="form-select" required>
-              <option value="">Select Hostel</option>
-              <option value="BH1">Boys Hostel 1 (BH1)</option>
-              <option value="BH2">Boys Hostel 2 (BH2)</option>
-              <option value="BH3">Boys Hostel 3 (BH3)</option>
-              <option value="GH1">Girls Hostel 1 (GH1)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="room_no">Room Number</label>
-            <input type="text" id="room_no" class="form-input" placeholder="e.g. 204">
-          </div>
-        </div>
-
-        <div class="grid-2" style="gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="password">Password *</label>
-            <input type="password" id="password" class="form-input" placeholder="Min 6 characters" required minlength="6">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="confirm_password">Confirm Password *</label>
-            <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required minlength="6">
-          </div>
-        </div>
-
-        <button type="submit" id="reg-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 10px 16px;">
-          Create Account
-        </button>
-      </form>
-
-      <div style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
-        Already registered? <a href="/index.html" style="font-weight: 600;">Sign in</a>
       </div>
+
+      <div></div>
     </div>
   </div>
 
@@ -92,12 +107,10 @@
         showToast('Please fill in all required fields.', 'error');
         return;
       }
-
       if (password !== confirm_password) {
         showToast('Passwords do not match.', 'error');
         return;
       }
-
       if (password.length < 6) {
         showToast('Password must be at least 6 characters long.', 'error');
         return;
