@@ -1,176 +1,219 @@
-# IIIT Bhubaneswar Mess Management System
+# MessMate — IIIT Bhubaneswar Mess Management & Waste Analytics System
 
-> A secure, scalable, and responsive full-stack Mess Management System built for the International Institute of Information Technology (IIIT) Bhubaneswar to automate dining operations, coupon purchases, real-time complaints, leave applications, payment reconciliations, and daily audits.
+**Live App:** [https://iiit-mess-mate.onrender.com](https://iiit-mess-mate.onrender.com)  
+**Repository:** [https://github.com/AdityaP700/messMate](https://github.com/AdityaP700/messMate)
 
----
-
-## 🚀 Tech Stack
-
-- **Backend:** Node.js, Express.js (v4)
-- **Database:** MySQL (v8.0+) via `mysql2/promise` with connection pooling & prepared statements
-- **Session & Security:** `express-session` (HTTP-only cookies, strict SameSite), `bcryptjs` (salt rounds: 10), `express-rate-limit`
-- **File Uploads:** `multer` with strict MIME-type (`image/jpeg`, `image/png`) and file-size validation (5MB max)
-- **Frontend:** Vanilla HTML5, modern CSS3 (Custom Properties, Flexbox, CSS Grid, mobile-first design), and modular Vanilla JavaScript (no external libraries/frameworks)
-- **Timezone:** Standard Indian Standard Time (`Asia/Kolkata`, IST, UTC+05:30) for meal windows and cutoff policies
+MessMate is a full-stack institutional dining operations, grievance redressal, and food-waste estimation platform built around IIIT Bhubaneswar's real campus dining workflow. Instead of assuming isolated hostel messes, it models shared dining across **Boys Wing** and **Girls Wing** between two independent vendor-operated halls — **Ground & 1st Floor Mess (Vendor 1)** and **New Mess (Vendor 2)** — alongside a **Student -> Mess Representative -> Vendor -> Dean** accountability pipeline.
 
 ---
 
-## 📂 Project Structure
+## System Architecture
 
+```mermaid
+flowchart LR
+  UI["Browser UI (HTML5 + CSS3 + Vanilla JS)"] -->|"HTTPS REST API"| API["Render Web Service (Node.js + Express 4)"]
+  API -->|"TLS SSL Port 4000 (mysql2/promise)"| DB["TiDB Cloud Starter (MySQL 8.0)"]
+  GH["GitHub (AdityaP700/messMate)"] -->|"Blueprint Auto-Deploy (render.yaml)"| API
 ```
-clg-project/
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | HTML5, CSS3, Vanilla JS | Role-separated UI (`student`, `admin`, `superadmin`), custom glassmorphism design system, dark/light theme toggle, `Caveat` + `Plus Jakarta Sans` typography, inline SVG icons |
+| **Backend** | Node.js (>= 18), Express 4 (`^4.21.2`) | Static delivery, modular REST APIs (`/api/auth`, `/api/student`, `/api/admin`, `/api/superadmin`), IST (`Asia/Kolkata`) time & cutoff enforcement |
+| **Security & Uploads** | `bcryptjs`, `express-session`, `express-rate-limit`, `multer` | Password hashing (10 salt rounds), HTTP-only cookies, brute-force throttling (10 req / 15 min on auth), strict JPG/PNG upload validation (max 5 MB) |
+| **Database** | MySQL 8.0 / TiDB Cloud Starter via `mysql2` (`^3.11.5`) | Connection pooling over TLS (`DB_SSL=true`), 11 normalized tables, prepared statements, transactional coupon generation, auto-bootstrap on fresh DB |
+| **Hosting & CI** | Render Free Web Service (`render.yaml`), GitHub | HTTPS reverse proxy (`trust proxy = 1`), zero-config Blueprint deploy, automatic schema & demo dataset initialization |
+
+---
+
+## Real Campus Workflow & Roles
+
+### 1. Dual-Vendor Shared Dining Model
+- Students register with their residential wing (**Boys Wing** or **Girls Wing**) and choose a primary dining facility:
+  - **`mess_1` — Ground & 1st Floor Mess** (`Vendor 1 — Main Hall`)
+  - **`mess_2` — New Mess** (`Vendor 2 — New Wing`)
+- Coupon purchases, counter meal claims, walk-in spot coupons, complaints, and kitchen prep projections are tracked per mess hall as well as campus-wide.
+
+### 2. Student Portal (`/student/*`)
+- **Prepaid Subscriptions & Digital Pass:** Select mess hall, date range, and per-day meal slots; upload UPI screenshot or choose cash at counter; view digital entry pass upon verification.
+- **Pre-Meal Skips & Leave Pauses:** Skip individual active meals at least `skip_cutoff_minutes` (default 60 minutes IST) prior to serving start, or apply for multi-day mess leave which automatically pauses active coupons to `on_leave`.
+- **Meal Ratings & Notice Board:** Rate today's meals (1–5 stars) and read Mess Committee announcements.
+- **Two-Route Complaints (With Anonymous Option):** Submit complaints only during active IST serving hours, choosing either **Via Mess Representative** (student governing body for faster triage & vendor escalation) or **Direct Complaint** (to Mess Committee / Dean), with optional identity masking.
+
+### 3. Mess Representative Portal (`/admin/*`)
+- **Food Waste, Prep & SLA Dashboard:** Tracks live consumption (`ate`), `skipped`, `on_leave`, 7-day historical no-show projection, food saved vs. projected unclaimed waste (`kg` and `INR`), recommended kitchen prep plates per meal slot, and side-by-side Vendor 1 vs. Vendor 2 performance.
+- **Grievance Triage & Vendor Escalation:** Filter complaints by `Status`, `Mess`, `Route`, or `Date`; move complaints from `open` / `in_progress` to **`escalated_to_vendor`** or **`resolved`** while recording **Vendor Coordination Notes**. Anonymous complainants remain masked (`Anonymous Student`).
+- **Counter Operations:** Verify/reject pending payments (transactionally generating coupons), mark dining hall meal claims per mess, issue walk-in spot coupons, approve leaves, edit weekly menus, and publish notices.
+
+### 4. Super Admin / Dean Portal (`/superadmin/*`)
+- **Executive Oversight:** View monthly verified revenue, total coupons sold, average daily attendance, dual-vendor waste comparisons, and system-wide complaint redressal rate & resolution hours.
+- **Policy & Governance:** Configure meal prices (`breakfast_price`, `lunch_price`, `snacks_price`, `dinner_price`), `skip_cutoff_minutes`, and `sunday_opt_in`; inspect daily reports; and provision or deactivate Mess Representative accounts scoped to `mess_1`, `mess_2`, or `all`.
+
+---
+
+## Database Schema (11 Tables)
+
+Defined in [`schema.sql`](schema.sql) and synchronized idempotently via [`backend/server.js`](backend/server.js) and [`backend/utils/messConfig.js`](backend/utils/messConfig.js):
+
+1. `users` — Students (`Boys Wing` / `Girls Wing`), Mess Representatives (`Student Body`), Super Admin (`Dean`), with `mess_hall` assignment and `role`
+2. `menu` — 7-day timetable across `breakfast`, `lunch`, `snacks`, `dinner`
+3. `mess_settings` — Configurable tariffs, skip cutoff minutes, and Sunday opt-in flag
+4. `payments` — Cash and UPI payment submissions with receipt path and verification state
+5. `coupons` — Individual meal passes keyed uniquely on `(student_id, meal_type, meal_date)` with `mess_hall` and lifecycle status (`active`, `used`, `skipped`, `on_leave`, `expired`)
+6. `coupon_orders` — Multi-day prepaid subscription orders linked to `payments` and `mess_hall`
+7. `mess_leave` — Leave date ranges (`end_date >= start_date`) that pause active coupons upon approval
+8. `complaints` — Grievances with `mess_hall`, `routing_type` (`via_mess_rep`, `direct`), `is_anonymous`, `status` (`open`, `in_progress`, `escalated_to_vendor`, `resolved`), `response`, `vendor_note`, and `resolved_at`
+9. `daily_reports` — Per-date meal, skip, spot-coupon, complaint, and revenue aggregations
+10. `announcements` — Mess Notice Board posts (`info`, `important`)
+11. `meal_ratings` — 1–5 star ratings (`uq_student_meal_rating`) per meal slot per day
+
+---
+
+## IST Serving Windows & Security Guardrails
+
+- **Meal Windows (`Asia/Kolkata` / IST):**
+  - **Breakfast:** `07:30 – 09:00`
+  - **Lunch:** `12:00 – 14:00`
+  - **Snacks:** `16:00 – 17:00`
+  - **Dinner:** `19:30 – 21:00`
+- **SQL Injection & XSS Defense:** Every query uses `mysql2` `?` prepared parameters; client rendering escapes untrusted text cleanly via `escapeHtml()` / `textContent`.
+- **Idempotency & Overlap Guards:** Prevents overlapping coupon orders, overlapping leave dates, double payment verification, and out-of-window complaints or late skips.
+- **Automated Maintenance:** Background hourly worker transitions unconsumed past `active` coupons to `expired`.
+
+---
+
+## Project Structure
+
+```text
+messMate/
 ├── backend/
 │   ├── config/
-│   │   ├── db.js                 # MySQL2 connection pool
-│   │   └── upload.js             # Multer config (MIME & size guards)
+│   │   ├── db.js                  # MySQL2 / TiDB TLS pool & host sanitizer
+│   │   └── upload.js              # Multer disk storage (JPG/PNG, 5 MB limit)
 │   ├── middleware/
-│   │   ├── auth.js               # isAuthenticated & hasRole guards
-│   │   └── rateLimiter.js        # express-rate-limit (10 req / 15 min)
+│   │   ├── auth.js                # isAuthenticated (401) & hasRole (403)
+│   │   └── rateLimiter.js         # Auth rate limiter (10 req / 15 min per IP)
 │   ├── routes/
-│   │   ├── auth.js               # Registration, Login, Logout, /me
-│   │   ├── student.js            # Menu, Buy Coupons, Skip, Leave, Complaints, Payments
-│   │   ├── admin.js              # Students, Menu Edit, Verify Payments, Spot Coupons, Leave
-│   │   └── superadmin.js         # Settings, Admin Staff, Reports, Analytics Overview
+│   │   ├── auth.js                # Register, Login, Logout, /me
+│   │   ├── student.js             # Menu, coupons, skip, leave, complaints, ratings, notices
+│   │   ├── admin.js               # Claims, spot coupons, verify payments, complaints, stats
+│   │   └── superadmin.js          # Settings, daily audit reports, admin management, overview
+│   ├── scripts/
+│   │   └── seedMockData.js        # 100 students, 3 Mess Reps, 10-day history seeder
 │   ├── utils/
-│   │   └── time.js               # IST time, meal windows, and skip cutoff validation
-│   └── server.js                 # Express server & hourly coupon expiration worker
+│   │   ├── analytics.js           # Food waste, kitchen prep & vendor SLA calculations
+│   │   ├── messConfig.js          # Dual-mess catalog & safe schema column migrations
+│   │   └── time.js                # IST clock helpers & meal window/cutoff checks
+│   └── server.js                  # Express entrypoint, auto schema sync & maintenance loop
 ├── frontend/
+│   ├── assets/
+│   │   └── campus-bg.jpg          # Auth backdrop visual
 │   ├── css/
-│   │   └── style.css             # Theme, responsive layout, cards, tables, badges, modal, toast
+│   │   └── style.css              # Glassmorphism UI + dark/light theme tokens
 │   ├── js/
-│   │   └── app.js                # Universal api() fetch wrapper, toast, auth guard, formatters
-│   ├── index.html                # Landing & Sign In portal
-│   ├── register.html             # Student self-registration portal
-│   ├── student/
-│   │   ├── dashboard.html        # Today's meals, active status, quick actions
-│   │   ├── menu.html             # Weekly timetable with today highlighted
-│   │   ├── buy-coupon.html       # Dynamic order builder, meal toggles, screenshot upload
-│   │   ├── my-coupons.html       # Date-filtered coupon cards with skip action
-│   │   ├── mess-leave.html       # Leave application & status tracking
-│   │   ├── complaints.html       # Real-time meal window grievance submission
-│   │   └── payment-history.html  # Receipts and transaction logs
-│   ├── admin/
-│   │   ├── dashboard.html        # Daily statistics & CSS bar chart
-│   │   ├── manage-menu.html      # Inline menu timetable editor
-│   │   ├── verify-payments.html  # Pending receipt approval queue
-│   │   ├── mark-claims.html      # Dining hall counter with roll lookup
-│   │   ├── spot-coupon.html      # Walk-in spot coupon issuing
-│   │   ├── leave-requests.html   # Leave approval / coupon pause queue
-│   │   ├── complaints.html       # Grievance redressal console
-│   │   └── students.html         # Searchable student directory
-│   └── superadmin/
-│       ├── dashboard.html        # Institute-wide executive KPIs
-│       ├── daily-reports.html    # Daily meal counts & revenue auditor
-│       ├── manage-admins.html    # Staff provisioning & deactivation
-│       └── settings.html         # Meal tariff, skip cutoffs & Sunday opt-in
-├── uploads/                      # Secure storage for payment receipt images
+│   │   └── app.js                 # Shared API client, role guard, SVGs, formatters
+│   ├── index.html                 # Showcase Sign-In portal with Quick Fill demo chips
+│   ├── register.html              # Student signup (Wing & Primary Mess selector)
+│   ├── student/                   # dashboard, menu, buy-coupon, my-coupons, mess-leave, complaints, payment-history
+│   ├── admin/                     # dashboard, manage-menu, verify-payments, mark-claims, spot-coupon, leave-requests, complaints, students
+│   └── superadmin/                # dashboard, daily-reports, manage-admins, settings
 ├── tests/
-│   └── verify.js                 # Automated end-to-end verification suite
-├── schema.sql                    # Complete database schema, constraints, indices & seeds
-├── .env.example                  # Environment configuration template
-├── .gitignore                    # Ignored artifacts & node_modules
-└── package.json                  # NPM manifest and scripts
+│   └── verify.js                  # Automated verification suite (npm test)
+├── schema.sql                     # Full 11-table MySQL DDL + default seeds
+├── render.yaml                    # Render Web Service Blueprint configuration
+├── .env.example                   # Environment template
+├── package.json
+└── package-lock.json
 ```
 
 ---
 
-## 🛠️ Setup Instructions
+## Local Setup
 
 ### 1. Prerequisites
-- **Node.js** (v18.x, v20.x, or v22.x recommended)
-- **MySQL Server** (v8.0+ or MariaDB 10.5+)
+- **Node.js** `>= 18.0.0`
+- **MySQL** `8.0+` (or a TiDB Cloud Starter cluster)
 
-### 2. Clone and Install Dependencies
+### 2. Clone & Install
 ```bash
-git clone <repo-url> iiit-bbsr-mess
-cd iiit-bbsr-mess
+git clone https://github.com/AdityaP700/messMate.git
+cd messMate
 npm install
 ```
 
-### 3. Database Setup
-Log into your MySQL CLI or workbench and execute `schema.sql`:
+### 3. Initialize Database & Seed Dataset
 ```bash
 mysql -u root -p < schema.sql
 ```
-This initializes the `iiit_mess` database, creates all 9 tables with foreign keys and cascade rules, seeds default tariff settings, populates the complete 7-day weekly menu timetable, and seeds the super administrator account.
-
-### 4. Configure Environment
-Copy `.env.example` to `.env` and fill in your MySQL credentials:
-```bash
-cp .env.example .env
-```
-Edit `.env`:
+Copy `.env.example` to `.env` and update your credentials:
 ```env
 PORT=3000
-SESSION_SECRET=iiit_mess_secret_key_change_in_production_2026
+SESSION_SECRET=change_this_session_secret
 NODE_ENV=development
 
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASS=your_mysql_password
+DB_PASS=root
 DB_NAME=iiit_mess
+DB_SSL=false
 ```
 
-### 5. Start the Server
+Seed the 100-student, 10-day dual-mess dataset (also runs automatically on server startup if `users <= 1` unless `DISABLE_DEMO_SEED=true`):
 ```bash
-# Production mode
-npm start
+npm run seed
+```
 
-# Development mode (with live watch)
+### 4. Run & Test
+```bash
+# Run verification suite
+npm test
+
+# Start server
+npm start
+# Or development watch mode
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🔐 Default Credentials
+## Cloud Deployment (Render + TiDB Cloud Starter)
 
-| Portal / Role | Roll Number / Email | Password | Access Capabilities |
+1. **Database (TiDB Cloud Starter — MySQL 8.0):**
+   - Create a free Starter cluster on [TiDB Cloud](https://tidbcloud.com/), allow public network access (`0.0.0.0/0`), generate a password, and note `DB_HOST`, `DB_USER`, and `DB_PASS`.
+2. **Backend & Static Frontend (Render):**
+   - Deploy directly from [`render.yaml`](render.yaml) via [Render Blueprint Deploy](https://dashboard.render.com/blueprint/new?repo=https://github.com/AdityaP700/messMate).
+   - Provide `DB_HOST`, `DB_USER`, and `DB_PASS` (`DB_PORT=4000`, `DB_NAME=test`, `DB_SSL=true`, and `NODE_ENV=production` are pre-configured in `render.yaml`).
+   - On first startup, `ensureExtraTables()` creates all 11 tables and seeds the demo accounts automatically.
+
+---
+
+## Demo Accounts
+
+All roles can also be filled with one click directly beneath the login card on `/` via **Quick Fill**:
+
+| Role | Identifier / Email | Password | Scope |
 | :--- | :--- | :--- | :--- |
-| **Super Admin** | `dean@iiitbbsr.ac.in` (Roll: `ADMIN001`) | `admin123` | Global settings, daily audits, revenue metrics, admin provisioning |
-| **Mess Admin** | Created via Super Admin Portal | Set at creation | Payment verifications, dining hall claims, spot coupons, menu edits |
-| **Student** | Self-registered via `/register.html` | Min 6 characters | Meal purchases, daily skip, leave applications, real-time complaints |
+| **Student (`mess_1`)** | `B122001` (`b122001@iiitbbsr.ac.in`) | `student123` | Boys Wing · Ground & 1st Floor Mess (`B122001`–`B122100` seeded) |
+| **Student (`mess_2`)** | `B122002` (`b122002@iiitbbsr.ac.in`) | `student123` | Girls Wing · New Mess |
+| **Mess Rep (`mess_1`)** | `REP001` (`rep1@iiitbbsr.ac.in`) | `admin123` | Student Governing Body · Ground & 1st Floor Mess |
+| **Mess Rep (`mess_2`)** | `REP002` (`rep2@iiitbbsr.ac.in`) | `admin123` | Student Governing Body · New Mess |
+| **Mess Coordinator** | `ADM001` (`messadmin@iiitbbsr.ac.in`) | `admin123` | Campus Mess Committee (`all` messes) |
+| **Dean (Super Admin)** | `ADMIN001` (`dean@iiitbbsr.ac.in`) | `admin123` | Institute tariffs, audit reports, rep provisioning |
 
 ---
 
-## ✨ Features & Guardrails
+## Verification
 
-### 1. Security & Data Integrity
-- **Parameterized SQL Queries:** Every database interaction strictly uses prepared statements (`mysql2` `?` placeholders) to eliminate SQL injection vectors.
-- **XSS Prevention:** Sanitized rendering via textContent and HTML entity escaping prevents script injection.
-- **Brute Force Rate Limiting:** `express-rate-limit` enforces a maximum of 10 login/registration attempts per 15 minutes per IP.
-- **Robust File Upload Guard:** Multer disk storage checks both filename extensions (`.jpg`, `.jpeg`, `.png`) and verified MIME headers (`image/jpeg`, `image/png`) up to 5MB.
-- **Role-Based Access Control:** Middleware layer blocks privilege escalation (e.g., students cannot access `/api/admin` or `/api/superadmin`).
-
-### 2. Smart Business Logic & Edge Case Protection
-- **IST Time & Serving Windows:** All meal actions strictly adhere to Indian Standard Time:
-  - **Breakfast:** 07:30 – 09:00
-  - **Lunch:** 12:00 – 14:00
-  - **Snacks:** 16:00 – 17:00
-  - **Dinner:** 19:30 – 21:00
-- **Meal Skip Cutoff Enforcement:** Students can only skip a meal if the request is submitted at least `skip_cutoff_minutes` (default 60 mins) prior to serving start. Past or already started meals cannot be skipped.
-- **Grievance Window Restriction:** Complaints can only be lodged during the actual serving window of that meal.
-- **Order Overlap Detection:** Students cannot submit duplicate or overlapping coupon purchase orders for the same date span.
-- **Leave Overlap & Coupon Pausing:** Mess leave applications reject overlapping dates; upon admin approval, all active coupons in that date interval automatically transition to `on_leave`.
-- **Idempotent Payment Verification:** Payments cannot be re-verified or re-rejected once settled.
-- **Automated Coupon Expiration:** Background maintenance service periodically transitions past unconsumed active coupons to `expired`.
-
----
-
-## 📸 Screenshots
-
-| Portal | Preview |
-| :--- | :--- |
-| **Student Dashboard** | *[Today's meals, active coupons checklist, quick actions]* |
-| **Coupon Purchase Order** | *[Interactive date range selector, per-day meal toggles, total calculator]* |
-| **Admin Claims Counter** | *[Live meal window display, instant roll search, one-click claim verification]* |
-| **Super Admin Audit & Reports** | *[Daily meal counts, revenue breakdowns, tariff settings]* |
-
----
-
-## 👥 Contributors & Maintainers
-
-- **Dean Student Affairs & Mess Committee**, IIIT Bhubaneswar
-- **Department of Computer Science & Engineering**, IIIT Bhubaneswar
-- Built for institutional dining management, student welfare, and operational transparency.
+Run `npm test` to validate [`tests/verify.js`](tests/verify.js):
+- `schema.sql` 11-table definitions, dual-mess columns, and default seeds
+- Dual-mess constants, routing modes, and vendor escalation statuses
+- IST (`Asia/Kolkata`) time helpers and skip-cutoff validation
+- Authentication & role-guard middleware (`401` / `403` enforcement)
+- Multer upload configuration and all 23 frontend files
+- Express bootstrap and route mounting on an ephemeral port
