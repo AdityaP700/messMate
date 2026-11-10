@@ -5,6 +5,7 @@ const db = require('../config/db');
 const { isAuthenticated, hasRole } = require('../middleware/auth');
 const { getTodayIST } = require('../utils/time');
 const { computeAnalytics } = require('../utils/analytics');
+const { normalizeMessHall } = require('../utils/messConfig');
 
 // All routes require superadmin role
 router.use(isAuthenticated, hasRole('superadmin'));
@@ -16,7 +17,7 @@ router.use(isAuthenticated, hasRole('superadmin'));
 router.get('/admins', async (req, res) => {
   try {
     const [admins] = await db.query(
-      `SELECT id, roll_no, name, email, hostel, room_no, role, is_active, created_at
+      `SELECT id, roll_no, name, email, hostel, mess_hall, room_no, role, is_active, created_at
        FROM users
        WHERE role = 'admin'
        ORDER BY created_at DESC`
@@ -30,20 +31,21 @@ router.get('/admins', async (req, res) => {
 
 /**
  * 2. POST /api/superadmin/admins
- * Create a new admin { roll_no, name, email, password, hostel }
+ * Create a new admin { roll_no, name, email, password, hostel, mess_hall }
  */
 router.post('/admins', async (req, res) => {
   try {
-    const { roll_no, name, email, password, hostel, room_no } = req.body;
+    const { roll_no, name, email, password, hostel, mess_hall, room_no } = req.body;
 
     if (!roll_no || !name || !email || !password || !hostel) {
-      return res.status(400).json({ error: 'Please provide roll_no, name, email, password, and hostel.' });
+      return res.status(400).json({ error: 'Please provide roll_no, name, email, password, and hostel/office.' });
     }
 
     const trimmedRoll = roll_no.trim().toUpperCase();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedName = name.trim();
     const trimmedHostel = hostel.trim();
+    const trimmedMess = normalizeMessHall(mess_hall, 'all');
     const trimmedRoom = (room_no || '').trim();
 
     if (password.length < 6) {
@@ -63,19 +65,20 @@ router.post('/admins', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      `INSERT INTO users (roll_no, name, email, password_hash, hostel, room_no, role, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, 'admin', TRUE)`,
-      [trimmedRoll, trimmedName, trimmedEmail, passwordHash, trimmedHostel, trimmedRoom]
+      `INSERT INTO users (roll_no, name, email, password_hash, hostel, mess_hall, room_no, role, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'admin', TRUE)`,
+      [trimmedRoll, trimmedName, trimmedEmail, passwordHash, trimmedHostel, trimmedMess, trimmedRoom]
     );
 
     return res.status(201).json({
-      message: 'New admin account created successfully.',
+      message: 'New Mess Representative / Admin account created successfully.',
       admin: {
         id: result.insertId,
         roll_no: trimmedRoll,
         name: trimmedName,
         email: trimmedEmail,
         hostel: trimmedHostel,
+        mess_hall: trimmedMess,
         room_no: trimmedRoom,
         role: 'admin',
         is_active: true
@@ -244,6 +247,7 @@ router.get('/stats/overview', async (req, res) => {
       `SELECT
          COUNT(*) AS total_complaints,
          SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_complaints,
+         SUM(CASE WHEN status = 'escalated_to_vendor' THEN 1 ELSE 0 END) AS escalated_complaints,
          SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS resolved_complaints
        FROM complaints`
     );

@@ -100,6 +100,14 @@
                 </select>
               </div>
 
+              <div class="form-group">
+                <label class="form-label" for="mess_hall">Mess Counter *</label>
+                <select id="mess_hall" class="form-select" required>
+                  <option value="mess_1">Ground &amp; 1st Floor Mess (Vendor 1)</option>
+                  <option value="mess_2">New Mess (Vendor 2)</option>
+                </select>
+              </div>
+
               <button type="submit" id="issue-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
                 Issue Spot Coupon & Mark Claimed
               </button>
@@ -135,9 +143,10 @@
 
       const student_roll_no = document.getElementById('student_roll_no').value.trim().toUpperCase();
       const meal_type = document.getElementById('meal_type').value;
+      const mess_hall = document.getElementById('mess_hall').value;
 
-      if (!student_roll_no || !meal_type) {
-        showToast('Please enter roll number and select meal type.', 'error');
+      if (!student_roll_no || !meal_type || !mess_hall) {
+        showToast('Please enter roll number and select mess & meal type.', 'error');
         return;
       }
 
@@ -147,13 +156,14 @@
       try {
         const res = await api('/api/admin/spot-coupon', {
           method: 'POST',
-          body: { student_roll_no, meal_type }
+          body: { student_roll_no, meal_type, mess_hall }
         });
 
         showToast(res.message, 'success');
 
         confirmDetails.innerHTML = `
           <div><strong>Student Roll:</strong> ${escapeHtml(student_roll_no)}</div>
+          <div><strong>Mess Counter:</strong> ${escapeHtml(formatMessName(res.mess_hall, true))}</div>
           <div><strong>Meal Type:</strong> <span style="text-transform: capitalize;">${escapeHtml(res.meal_type)}</span></div>
           <div class="tabular-nums"><strong>Meal Date:</strong> ${formatDate(res.meal_date)}</div>
           <div class="tabular-nums"><strong>Cash Collected:</strong> <strong style="color: var(--accent);">${formatCurrency(res.amount)}</strong></div>

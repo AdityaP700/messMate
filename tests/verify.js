@@ -34,11 +34,20 @@ requiredTables.forEach(t => {
   );
 });
 
-// Check seeds in schema
+// Check seeds and dual-mess schema columns in schema.sql
 assert(schemaContent.includes('breakfast_price'), 'mess_settings seeds missing');
 assert(schemaContent.includes('ADMIN001'), 'Superadmin seed missing');
 assert(schemaContent.includes('Poha, Boiled Egg'), 'Menu seeds missing');
-console.log('✓ schema.sql validated: all 9 tables and seeds verified.');
+assert(schemaContent.includes('mess_hall'), 'Dual-mess mess_hall column missing from schema.sql');
+assert(schemaContent.includes('routing_type'), 'Complaint routing_type column missing from schema.sql');
+assert(schemaContent.includes('escalated_to_vendor'), 'Vendor escalation status missing from schema.sql');
+console.log('✓ schema.sql validated: all tables, dual-mess columns, and seeds verified.');
+
+const messConfig = require('../backend/utils/messConfig');
+assert(messConfig.MESS_HALLS.mess_1 && messConfig.MESS_HALLS.mess_2, 'Both mess_1 and mess_2 definitions required');
+assert(messConfig.VALID_ROUTING_TYPES.includes('via_mess_rep') && messConfig.VALID_ROUTING_TYPES.includes('direct'));
+assert(messConfig.VALID_COMPLAINT_STATUSES.includes('escalated_to_vendor'));
+console.log('✓ Dual-mess configuration validated.');
 
 // Test 2: Check Time utilities and IST logic
 console.log('Test 2: Validating IST time utilities & meal windows...');

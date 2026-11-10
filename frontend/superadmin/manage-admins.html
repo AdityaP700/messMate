@@ -85,13 +85,22 @@
 
               <div class="grid-2">
                 <div class="form-group">
-                  <label class="form-label" for="admin_hostel">Block / Office *</label>
-                  <input type="text" id="admin_hostel" class="form-input" placeholder="e.g. Mess Office" required>
+                  <label class="form-label" for="admin_hostel">Body / Committee *</label>
+                  <input type="text" id="admin_hostel" class="form-input" placeholder="e.g. Student Body / Mess Committee" value="Student Body" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="admin_room_no">Room / Desk</label>
-                  <input type="text" id="admin_room_no" class="form-input" placeholder="e.g. G-04">
+                  <label class="form-label" for="admin_mess_hall">Assigned Mess *</label>
+                  <select id="admin_mess_hall" class="form-select" required>
+                    <option value="all">Both Messes (Campus-wide)</option>
+                    <option value="mess_1">Ground &amp; 1st Floor Mess (Vendor 1)</option>
+                    <option value="mess_2">New Mess (Vendor 2)</option>
+                  </select>
                 </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="admin_room_no">Room / Desk</label>
+                <input type="text" id="admin_room_no" class="form-input" placeholder="e.g. MR-03">
               </div>
 
               <div class="form-group">
@@ -161,7 +170,10 @@
           const isMe = (currentUser && a.id === currentUser.id);
 
           tr.innerHTML = `
-            <td><strong style="color: var(--text-main);">${escapeHtml(a.name)}</strong></td>
+            <td>
+              <strong style="color: var(--text-main);">${escapeHtml(a.name)}</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml(a.hostel || 'Student Body')} &middot; ${escapeHtml(formatMessName(a.mess_hall))}</div>
+            </td>
             <td class="nowrap">${escapeHtml(a.roll_no)}</td>
             <td>${escapeHtml(a.email)}</td>
             <td class="nowrap">
@@ -192,10 +204,11 @@
       const roll_no = document.getElementById('admin_roll_no').value.trim().toUpperCase();
       const email = document.getElementById('admin_email').value.trim();
       const hostel = document.getElementById('admin_hostel').value.trim();
+      const mess_hall = document.getElementById('admin_mess_hall').value;
       const room_no = document.getElementById('admin_room_no').value.trim();
       const password = document.getElementById('admin_password').value;
 
-      if (!name || !roll_no || !email || !hostel || !password) {
+      if (!name || !roll_no || !email || !hostel || !mess_hall || !password) {
         showToast('Please fill all required fields.', 'error');
         return;
       }
@@ -211,7 +224,7 @@
       try {
         const res = await api('/api/superadmin/admins', {
           method: 'POST',
-          body: { name, roll_no, email, hostel, room_no, password }
+          body: { name, roll_no, email, hostel, mess_hall, room_no, password }
         });
 
         showToast(res.message, 'success');

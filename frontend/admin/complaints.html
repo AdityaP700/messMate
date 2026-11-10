@@ -74,7 +74,26 @@
                   <option value="">All Statuses</option>
                   <option value="open">Open</option>
                   <option value="in_progress">In Progress</option>
+                  <option value="escalated_to_vendor">Escalated to Vendor</option>
                   <option value="resolved">Resolved</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="filter-mess" class="form-label" style="margin: 0;">Mess</label>
+                <select id="filter-mess" class="form-select" style="width: auto;">
+                  <option value="">All Messes</option>
+                  <option value="mess_1">Ground &amp; 1st Floor Mess</option>
+                  <option value="mess_2">New Mess</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="filter-route" class="form-label" style="margin: 0;">Route</label>
+                <select id="filter-route" class="form-select" style="width: auto;">
+                  <option value="">All Routes</option>
+                  <option value="via_mess_rep">Via Mess Rep</option>
+                  <option value="direct">Direct</option>
                 </select>
               </div>
 
@@ -121,15 +140,21 @@
         <div class="form-group">
           <label class="form-label" for="resp-status">Status *</label>
           <select id="resp-status" class="form-select">
-            <option value="in_progress">In Progress</option>
+            <option value="in_progress">In Progress (Mess Rep Reviewing)</option>
+            <option value="escalated_to_vendor">Escalated to Vendor</option>
             <option value="resolved">Resolved</option>
             <option value="open">Open</option>
           </select>
         </div>
 
+        <div class="form-group">
+          <label class="form-label" for="resp-text">Mess Rep / Admin Response *</label>
+          <textarea id="resp-text" class="form-textarea" placeholder="Detail action taken or rep triage notes..." required></textarea>
+        </div>
+
         <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="resp-text">Official Action / Response *</label>
-          <textarea id="resp-text" class="form-textarea" placeholder="Detail action taken (e.g. food replaced, kitchen inspected)..." required></textarea>
+          <label class="form-label" for="resp-vendor-note">Vendor Coordination Note (Optional)</label>
+          <textarea id="resp-vendor-note" class="form-textarea" style="min-height: 68px;" placeholder="e.g. Escalated to Vendor 1 supervisor for batch correction..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -141,6 +166,8 @@
 
   <script src="/js/app.js"></script>
   <script>
+    let complaintsCache = {};
+
     document.addEventListener('DOMContentLoaded', async () => {
       await checkAuth(['admin', 'superadmin']);
       loadComplaints();
@@ -148,6 +175,8 @@
 
     function clearFilters() {
       document.getElementById('filter-status').value = '';
+      document.getElementById('filter-mess').value = '';
+      document.getElementById('filter-route').value = '';
       document.getElementById('filter-date').value = '';
       loadComplaints();
     }
@@ -157,15 +186,20 @@
       container.innerHTML = '<p style="color: var(--text-muted);">Loading complaints...</p>';
 
       const status = document.getElementById('filter-status').value;
+      const mess = document.getElementById('filter-mess').value;
+      const route = document.getElementById('filter-route').value;
       const date = document.getElementById('filter-date').value;
 
       let url = '/api/admin/complaints?';
       if (status) url += `status=${encodeURIComponent(status)}&`;
+      if (mess) url += `mess_hall=${encodeURIComponent(mess)}&`;
+      if (route) url += `routing_type=${encodeURIComponent(route)}&`;
       if (date) url += `date=${encodeURIComponent(date)}&`;
 
       try {
         const data = await api(url);
         const list = data.complaints || [];
+        complaintsCache = {};
         document.getElementById('complaints-count').textContent = list.length;
 
         if (list.length === 0) {
@@ -181,6 +215,7 @@
 
         container.innerHTML = '';
         list.forEach(c => {
+          complaintsCache[c.id] = c;
           const card = document.createElement('div');
           card.className = 'card';
           card.style.margin = '0';
@@ -190,17 +225,22 @@
             ? '<span class="badge badge-used">Anonymous</span>'
             : `<strong style="color: var(--text-main);">${escapeHtml(c.student_name)}</strong> <span style="color: var(--text-muted); font-size: 12.5px;">(${escapeHtml(c.roll_no)} &middot; ${escapeHtml(c.hostel || '')} ${escapeHtml(c.room_no || '')})</span>`;
 
+          const statusText = (c.status || '').replace(/_/g, ' ');
+          const routeBadge = `<span class="meta-pill" style="padding: 2px 8px; font-size: 11px;">${escapeHtml(formatRouteLabel(c.routing_type))}</span>`;
+
           card.innerHTML = `
             <div class="flex justify-between items-center mb-3" style="flex-wrap: wrap; gap: 8px;">
               <div>
                 ${studentLabel}
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
-                  <span style="text-transform: capitalize; font-weight: 600;">${escapeHtml(c.meal_type)}</span>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <strong>${escapeHtml(formatMessName(c.mess_hall, true))}</strong>
+                  &middot; ${routeBadge}
+                  &middot; <span style="text-transform: capitalize; font-weight: 600;">${escapeHtml(c.meal_type)}</span>
                   &middot; ${formatDate(c.meal_date)}
                   &middot; <span style="text-transform: capitalize;">${escapeHtml((c.category || '').replace('_', ' '))}</span>
                 </div>
               </div>
-              <span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span>
+              <span class="badge badge-${c.status}" style="text-transform: capitalize;">${escapeHtml(statusText)}</span>
             </div>
 
             <div style="background: var(--glass-bg-strong); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
@@ -209,10 +249,11 @@
 
             <div class="flex justify-between items-center" style="font-size: 12.5px; flex-wrap: wrap; gap: 8px;">
               <div>
-                ${c.response ? `<strong>Response:</strong> ${escapeHtml(c.response)} <span style="color:var(--text-muted);">(${escapeHtml(c.responded_by_name || 'Admin')})</span>` : '<span style="color: var(--text-muted);">No response recorded yet.</span>'}
+                ${c.response ? `<div><strong>Rep / Admin Response:</strong> ${escapeHtml(c.response)} <span style="color:var(--text-muted);">(${escapeHtml(c.responded_by_name || 'Mess Rep')})</span></div>` : '<span style="color: var(--text-muted);">No response recorded yet.</span>'}
+                ${c.vendor_note ? `<div style="color: var(--primary); margin-top: 3px;"><strong>Vendor Action:</strong> ${escapeHtml(c.vendor_note)}</div>` : ''}
               </div>
-              <button class="btn btn-sm btn-primary" onclick="openResponseModal(${c.id}, '${escapeHtml(c.description).replace(/'/g, "\\'")}', '${c.status}', '${escapeHtml(c.response || '').replace(/'/g, "\\'")}')">
-                Reply & Update
+              <button class="btn btn-sm btn-primary" onclick="openResponseModal(${c.id})">
+                Reply / Escalate
               </button>
             </div>
           `;
@@ -223,11 +264,14 @@
       }
     }
 
-    function openResponseModal(id, desc, currentStatus, currentResp) {
+    function openResponseModal(id) {
+      const c = complaintsCache[id];
+      if (!c) return;
       document.getElementById('resp-complaint-id').value = id;
-      document.getElementById('resp-student-desc').textContent = desc;
-      document.getElementById('resp-status').value = currentStatus || 'in_progress';
-      document.getElementById('resp-text').value = currentResp || '';
+      document.getElementById('resp-student-desc').textContent = `[${formatMessName(c.mess_hall, true)} · ${formatRouteLabel(c.routing_type)}] ${c.description}`;
+      document.getElementById('resp-status').value = c.status || 'in_progress';
+      document.getElementById('resp-text').value = c.response || '';
+      document.getElementById('resp-vendor-note').value = c.vendor_note || '';
       document.getElementById('response-modal').classList.add('active');
     }
 
@@ -239,6 +283,7 @@
       const id = document.getElementById('resp-complaint-id').value;
       const status = document.getElementById('resp-status').value;
       const response = document.getElementById('resp-text').value.trim();
+      const vendor_note = document.getElementById('resp-vendor-note').value.trim();
       const saveBtn = document.getElementById('save-resp-btn');
 
       if (!response) {
@@ -252,7 +297,7 @@
       try {
         const res = await api(`/api/admin/complaints/${id}`, {
           method: 'PUT',
-          body: { response, status }
+          body: { response, status, vendor_note }
         });
 
         showToast(res.message, 'success');

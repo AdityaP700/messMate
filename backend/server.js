@@ -10,6 +10,7 @@ dotenv.config();
 
 const db = require('./config/db');
 const { getTodayIST } = require('./utils/time');
+const { ensureMessSchemaColumns } = require('./utils/messConfig');
 const { seedMockData } = require('./scripts/seedMockData');
 
 const authRoutes = require('./routes/auth');
@@ -118,6 +119,8 @@ async function ensureExtraTables() {
     if (cols[0].cnt === 0) {
       await db.query('ALTER TABLE complaints ADD COLUMN is_anonymous BOOLEAN DEFAULT FALSE AFTER description');
     }
+
+    await ensureMessSchemaColumns(db);
 
     const [annCount] = await db.query('SELECT COUNT(*) AS cnt FROM announcements');
     if (annCount[0].cnt === 0) {

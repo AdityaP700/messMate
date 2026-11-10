@@ -73,14 +73,24 @@
               <h2 style="font-size: 22px; font-weight: 700; text-transform: capitalize; color: var(--text-main);" id="current-meal-title">Loading...</h2>
               <p class="tabular-nums" style="font-size: 13px; color: var(--text-muted); margin-top: 2px;" id="current-meal-schedule">Serving Time: -</p>
             </div>
-            <div class="flex items-center gap-2">
-              <label for="select-meal-counter" class="form-label" style="margin: 0;">Meal:</label>
-              <select id="select-meal-counter" class="form-select" style="width: auto;" onchange="loadClaims()">
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="snacks">Snacks</option>
-                <option value="dinner">Dinner</option>
-              </select>
+            <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+              <div class="flex items-center gap-2">
+                <label for="select-mess-counter" class="form-label" style="margin: 0;">Mess:</label>
+                <select id="select-mess-counter" class="form-select" style="width: auto;" onchange="loadClaims()">
+                  <option value="">All Messes</option>
+                  <option value="mess_1">Ground &amp; 1st Floor Mess</option>
+                  <option value="mess_2">New Mess</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="select-meal-counter" class="form-label" style="margin: 0;">Meal:</label>
+                <select id="select-meal-counter" class="form-select" style="width: auto;" onchange="loadClaims()">
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="snacks">Snacks</option>
+                  <option value="dinner">Dinner</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -113,8 +123,8 @@
                 <tr>
                   <th>Roll Number</th>
                   <th>Student Name</th>
-                  <th>Hostel</th>
-                  <th>Room</th>
+                  <th>Wing</th>
+                  <th>Mess Counter</th>
                   <th>Meal</th>
                   <th>Action</th>
                 </tr>
@@ -140,12 +150,16 @@
 
     async function loadClaims() {
       const mealSelect = document.getElementById('select-meal-counter');
+      const messSelect = document.getElementById('select-mess-counter');
       const mealType = mealSelect.value;
+      const messHall = messSelect ? messSelect.value : '';
       const tbody = document.getElementById('claims-table-body');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading active coupons...</td></tr>';
 
       try {
-        const data = await api(`/api/admin/claims/today?meal_type=${encodeURIComponent(mealType)}`);
+        let url = `/api/admin/claims/today?meal_type=${encodeURIComponent(mealType)}`;
+        if (messHall) url += `&mess_hall=${encodeURIComponent(messHall)}`;
+        const data = await api(url);
         document.getElementById('current-meal-title').textContent = data.meal_type;
         document.getElementById('current-meal-schedule').textContent = `Serving Time: ${data.schedule.start} – ${data.schedule.end} IST`;
 
@@ -178,7 +192,7 @@
           <td class="nowrap"><strong style="color: var(--primary);">${escapeHtml(c.roll_no)}</strong></td>
           <td>${escapeHtml(c.student_name)}</td>
           <td class="nowrap">${escapeHtml(c.hostel || '-')}</td>
-          <td class="nowrap">${escapeHtml(c.room_no || '-')}</td>
+          <td class="nowrap">${escapeHtml(formatMessName(c.mess_hall))}</td>
           <td class="nowrap" style="text-transform: capitalize;">${escapeHtml(c.meal_type)}</td>
           <td class="nowrap">
             <button class="btn btn-sm btn-success" onclick="markClaimed(${c.coupon_id}, '${escapeHtml(c.roll_no)}')">Mark Claimed</button>

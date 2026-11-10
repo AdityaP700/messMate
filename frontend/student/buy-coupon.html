@@ -75,9 +75,16 @@
           <form id="buy-coupons-form">
             <div class="step-section">
               <div class="step-heading">
-                <span class="step-num">1</span> Select Date Range
+                <span class="step-num">1</span> Select Mess &amp; Date Range
               </div>
-              <div class="grid-2">
+              <div class="grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="mess_hall">Dining Mess &amp; Vendor *</label>
+                  <select id="mess_hall" class="form-select" required>
+                    <option value="mess_1">Ground &amp; 1st Floor Mess (Vendor 1)</option>
+                    <option value="mess_2">New Mess (Vendor 2)</option>
+                  </select>
+                </div>
                 <div class="form-group">
                   <label class="form-label" for="start_date">Start Date *</label>
                   <input type="date" id="start_date" class="form-input" required>
@@ -189,7 +196,11 @@
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      await checkAuth(['student']);
+      const me = await checkAuth(['student']);
+      if (me && me.mess_hall && document.getElementById('mess_hall')) {
+        const messSel = document.getElementById('mess_hall');
+        if (['mess_1', 'mess_2'].includes(me.mess_hall)) messSel.value = me.mess_hall;
+      }
       await loadSettings();
       initDates();
       renderDaysTable();
@@ -340,6 +351,7 @@
     buyForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const messHall = document.getElementById('mess_hall').value;
       const startDateVal = document.getElementById('start_date').value;
       const endDateVal = document.getElementById('end_date').value;
       const includesSunday = document.getElementById('includes_sunday').checked;
@@ -353,6 +365,7 @@
       }
 
       const formData = new FormData();
+      formData.append('mess_hall', messHall);
       formData.append('start_date', startDateVal);
       formData.append('end_date', endDateVal);
       formData.append('includes_sunday', includesSunday);

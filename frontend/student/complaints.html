@@ -78,6 +78,24 @@
           <form id="complaint-form">
             <div class="grid-2">
               <div class="form-group">
+                <label class="form-label" for="complaint_mess">Mess / Vendor *</label>
+                <select id="complaint_mess" class="form-select" required>
+                  <option value="mess_1">Ground &amp; 1st Floor Mess (Vendor 1)</option>
+                  <option value="mess_2">New Mess (Vendor 2)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="complaint_route">Submission Route *</label>
+                <select id="complaint_route" class="form-select" required>
+                  <option value="via_mess_rep">Via Mess Representative (Student Body — faster triage &amp; vendor escalation)</option>
+                  <option value="direct">Direct Complaint (Mess Office &amp; Dean directly)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
                 <label class="form-label" for="complaint_meal">Meal Type *</label>
                 <select id="complaint_meal" class="form-select" required onchange="checkActiveMealWindow()">
                   <option value="">Select Meal</option>
@@ -130,11 +148,11 @@
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Meal</th>
-                  <th>Category</th>
+                  <th>Mess / Route</th>
+                  <th>Meal &amp; Category</th>
                   <th>Description</th>
                   <th>Status</th>
-                  <th>Response</th>
+                  <th>Response &amp; Vendor Note</th>
                   <th>Resolved</th>
                 </tr>
               </thead>
@@ -158,7 +176,10 @@
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
-      await checkAuth(['student']);
+      const me = await checkAuth(['student']);
+      if (me && ['mess_1', 'mess_2'].includes(me.mess_hall)) {
+        document.getElementById('complaint_mess').value = me.mess_hall;
+      }
       checkActiveMealWindow();
       loadComplaints();
     });
@@ -224,13 +245,27 @@
         tbody.innerHTML = '';
         data.complaints.forEach(c => {
           const tr = document.createElement('tr');
+          const statusLabel = (c.status || '').replace(/_/g, ' ');
+          const respHtml = c.response
+            ? `${escapeHtml(c.response)} <span style="color:var(--text-muted);font-size:12px;">(${escapeHtml(c.responded_by_name || 'Mess Rep')})</span>`
+            : '<span style="color:var(--text-light);">Awaiting response</span>';
+          const vendorHtml = c.vendor_note
+            ? `<div style="font-size: 11.5px; color: var(--primary); margin-top: 3px;"><strong>Vendor Action:</strong> ${escapeHtml(c.vendor_note)}</div>`
+            : '';
+
           tr.innerHTML = `
             <td class="nowrap tabular-nums">${formatDate(c.meal_date)}</td>
-            <td class="nowrap" style="text-transform: capitalize;"><strong>${escapeHtml(c.meal_type)}</strong></td>
-            <td class="nowrap" style="text-transform: capitalize;">${escapeHtml((c.category || '').replace('_', ' '))}</td>
+            <td class="nowrap">
+              <div style="font-weight: 600; font-size: 12.5px;">${escapeHtml(formatMessName(c.mess_hall))}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml(formatRouteLabel(c.routing_type))}</div>
+            </td>
+            <td class="nowrap" style="text-transform: capitalize;">
+              <strong>${escapeHtml(c.meal_type)}</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml((c.category || '').replace('_', ' '))}</div>
+            </td>
             <td>${escapeHtml(c.description)}</td>
-            <td class="nowrap"><span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span></td>
-            <td>${c.response ? `${escapeHtml(c.response)} <span style="color:var(--text-muted);font-size:12px;">(${escapeHtml(c.responded_by_name || 'Admin')})</span>` : '<span style="color:var(--text-light);">Awaiting response</span>'}</td>
+            <td class="nowrap"><span class="badge badge-${c.status}" style="text-transform: capitalize;">${escapeHtml(statusLabel)}</span></td>
+            <td>${respHtml}${vendorHtml}</td>
             <td class="nowrap tabular-nums">${c.resolved_at ? formatDate(c.resolved_at) : '-'}</td>
           `;
           tbody.appendChild(tr);
@@ -246,12 +281,14 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const mess_hall = document.getElementById('complaint_mess').value;
+      const routing_type = document.getElementById('complaint_route').value;
       const meal_type = document.getElementById('complaint_meal').value;
       const category = document.getElementById('complaint_category').value;
       const description = document.getElementById('complaint_desc').value.trim();
       const is_anonymous = document.getElementById('complaint_anon').checked;
 
-      if (!meal_type || !category || !description) {
+      if (!mess_hall || !routing_type || !meal_type || !category || !description) {
         showToast('Please fill all fields.', 'error');
         return;
       }
@@ -262,7 +299,7 @@
       try {
         const res = await api('/api/student/complaints', {
           method: 'POST',
-          body: { meal_type, category, description, is_anonymous }
+          body: { mess_hall, routing_type, meal_type, category, description, is_anonymous }
         });
 
         showToast(res.message, 'success');

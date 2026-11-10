@@ -277,6 +277,69 @@ function formatCurrency(val) {
   return `₹${num.toFixed(2)}`;
 }
 
+const MESS_LABELS = {
+  mess_1: 'Ground & 1st Floor Mess',
+  mess_2: 'New Mess',
+  all: 'Both Messes'
+};
+
+const MESS_VENDOR_LABELS = {
+  mess_1: 'Ground & 1st Floor Mess (Vendor 1)',
+  mess_2: 'New Mess (Vendor 2)',
+  all: 'Both Vendors'
+};
+
+function formatMessName(code, includeVendor = false) {
+  if (!code) return MESS_LABELS.mess_1;
+  return (includeVendor ? MESS_VENDOR_LABELS[code] : MESS_LABELS[code]) || code;
+}
+
+function formatRouteLabel(route) {
+  return route === 'direct' ? 'Direct Complaint' : 'Via Mess Rep';
+}
+
+function renderMealBreakdownRows(byMeal) {
+  const order = ['breakfast', 'lunch', 'snacks', 'dinner'];
+  return order.map(m => {
+    const row = (byMeal && byMeal[m]) || {};
+    const label = m.charAt(0).toUpperCase() + m.slice(1);
+    return `
+      <tr>
+        <td><strong>${label}</strong></td>
+        <td class="tabular-nums">${row.ate ?? 0}</td>
+        <td class="tabular-nums">${row.skipped ?? 0}</td>
+        <td class="tabular-nums">${row.on_leave ?? 0}</td>
+        <td class="tabular-nums"><strong>${row.recommended_cook ?? 0}</strong> plates</td>
+        <td class="tabular-nums" style="color: var(--accent);">${Number(row.food_saved_kg || 0).toFixed(1)} kg</td>
+        <td class="tabular-nums" style="color: var(--danger);">${Number(row.projected_waste_kg || 0).toFixed(1)} kg</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderVendorBreakdownRows(byMess) {
+  return ['mess_1', 'mess_2'].map(code => {
+    const row = (byMess && byMess[code]) || {};
+    const c = row.complaints || {};
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(row.name || formatMessName(code))}</strong>
+          <div style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml(row.vendor || '')}</div>
+        </td>
+        <td class="tabular-nums">${row.ate ?? 0} ate / ${row.skipped ?? 0} skip</td>
+        <td class="tabular-nums"><strong>${row.recommended_prep_portions ?? 0}</strong> plates</td>
+        <td class="tabular-nums" style="color: var(--accent);">${Number(row.food_saved_kg || 0).toFixed(1)} kg</td>
+        <td class="tabular-nums" style="color: var(--danger);">${Number(row.projected_waste_kg || 0).toFixed(1)} kg</td>
+        <td class="tabular-nums">
+          <span class="badge badge-escalated_to_vendor">${c.escalated_to_vendor ?? 0} escalated</span>
+          <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">${c.resolved ?? 0}/${c.total ?? 0} (${c.redressal_rate_pct ?? 100}%)</span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');

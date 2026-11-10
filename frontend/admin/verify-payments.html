@@ -152,7 +152,7 @@
                     ${escapeHtml(p.student_name)} <span style="font-size: 12.5px; font-weight: 500; color: var(--text-muted);">(${escapeHtml(p.roll_no)})</span>
                   </div>
                   <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
-                    ${escapeHtml(p.hostel || '-')} &middot; Room ${escapeHtml(p.room_no || '-')}
+                    ${escapeHtml(p.hostel || '-')} &middot; Room ${escapeHtml(p.room_no || '-')} &middot; <strong>${escapeHtml(formatMessName(p.order_mess_hall || p.mess_hall))}</strong>
                   </div>
                   <div class="tabular-nums" style="font-size: 13px; margin-top: 5px; color: var(--text-secondary);">
                     <strong style="color: var(--accent); font-size: 14.5px;">${formatCurrency(p.amount)}</strong>

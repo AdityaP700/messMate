@@ -8,6 +8,12 @@ const {
   MEAL_SCHEDULE
 } = require('../utils/time');
 const { computeAnalytics } = require('../utils/analytics');
+const {
+  VALID_MESS_CODES,
+  VALID_ROUTING_TYPES,
+  VALID_COMPLAINT_STATUSES,
+  normalizeMessHall
+} = require('../utils/messConfig');
 
 // All routes require admin or superadmin
 router.use(isAuthenticated, hasRole('admin', 'superadmin'));
@@ -18,19 +24,24 @@ router.use(isAuthenticated, hasRole('admin', 'superadmin'));
  */
 router.get('/students', async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, mess_hall } = req.query;
     let sql = `
-      SELECT u.id, u.roll_no, u.name, u.email, u.hostel, u.room_no, u.is_active, u.created_at,
+      SELECT u.id, u.roll_no, u.name, u.email, u.hostel, u.mess_hall, u.room_no, u.is_active, u.created_at,
              (SELECT COUNT(*) FROM coupons c WHERE c.student_id = u.id AND c.status = 'active') AS active_coupons_count
       FROM users u
       WHERE u.role = 'student'
     `;
     const params = [];
 
+    if (mess_hall && VALID_MESS_CODES.includes(mess_hall)) {
+      sql += ' AND u.mess_hall = ?';
+      params.push(mess_hall);
+    }
+
     if (search && search.trim()) {
       const q = `%${search.trim()}%`;
-      sql += ' AND (u.roll_no LIKE ? OR u.name LIKE ? OR u.hostel LIKE ?)';
-      params.push(q, q, q);
+      sql += ' AND (u.roll_no LIKE ? OR u.name LIKE ? OR u.hostel LIKE ? OR u.mess_hall LIKE ?)';
+      params.push(q, q, q, q);
     }
 
     sql += ' ORDER BY u.roll_no ASC';
@@ -82,8 +93,8 @@ router.get('/payments/pending', async (req, res) => {
   try {
     const [payments] = await db.query(
       `SELECT p.id, p.student_id, p.amount, p.method, p.screenshot_path, p.status, p.notes, p.created_at,
-              u.roll_no, u.name AS student_name, u.hostel, u.room_no,
-              o.id AS order_id, o.start_date, o.end_date, o.meals_selected, o.includes_sunday
+              u.roll_no, u.name AS student_name, u.hostel, u.mess_hall, u.room_no,
+              o.id AS order_id, o.mess_hall AS order_mess_hall, o.start_date, o.end_date, o.meals_selected, o.includes_sunday
        FROM payments p
        JOIN users u ON p.student_id = u.id
        LEFT JOIN coupon_orders o ON p.id = o.payment_id
@@ -150,7 +161,7 @@ router.put('/payments/:id/verify', async (req, res) => {
 
     // Look up coupon_order
     const [orders] = await connection.query(
-      'SELECT id, student_id, start_date, end_date, meals_selected, includes_sunday FROM coupon_orders WHERE payment_id = ?',
+      'SELECT id, student_id, mess_hall, start_date, end_date, meals_selected, includes_sunday FROM coupon_orders WHERE payment_id = ?',
       [paymentId]
     );
 
@@ -158,6 +169,7 @@ router.put('/payments/:id/verify', async (req, res) => {
     if (orders.length > 0) {
       const order = orders[0];
       const studentId = order.student_id;
+      const messHall = normalizeMessHall(order.mess_hall, 'mess_1');
       let mealsSelected = order.meals_selected;
       if (typeof mealsSelected === 'string') {
         try {
@@ -184,14 +196,14 @@ router.put('/payments/:id/verify', async (req, res) => {
 
         for (const meal of dayMeals) {
           const source = (dayName === 'Sunday') ? 'sunday' : 'prepaid';
-          couponRows.push([studentId, meal, dateStr, source, 'active']);
+          couponRows.push([studentId, messHall, meal, dateStr, source, 'active']);
         }
       }
 
       if (couponRows.length > 0) {
         // Bulk insert coupons with IGNORE or ON DUPLICATE KEY UPDATE to prevent crash if existing
         await connection.query(
-          `INSERT IGNORE INTO coupons (student_id, meal_type, meal_date, source, status)
+          `INSERT IGNORE INTO coupons (student_id, mess_hall, meal_type, meal_date, source, status)
            VALUES ?`,
           [couponRows]
         );
@@ -221,16 +233,25 @@ router.get('/claims/today', async (req, res) => {
   try {
     const today = getTodayIST();
     const mealType = req.query.meal_type || getCurrentOrUpcomingMeal();
+    const messHall = req.query.mess_hall;
 
-    const [claims] = await db.query(
-      `SELECT c.id AS coupon_id, c.student_id, c.meal_type, c.meal_date, c.source, c.status, c.created_at,
-              u.roll_no, u.name AS student_name, u.hostel, u.room_no
-       FROM coupons c
-       JOIN users u ON c.student_id = u.id
-       WHERE c.meal_date = ? AND c.meal_type = ? AND c.status = 'active'
-       ORDER BY u.roll_no ASC`,
-      [today, mealType]
-    );
+    let sql = `
+      SELECT c.id AS coupon_id, c.student_id, c.mess_hall, c.meal_type, c.meal_date, c.source, c.status, c.created_at,
+             u.roll_no, u.name AS student_name, u.hostel, u.room_no
+      FROM coupons c
+      JOIN users u ON c.student_id = u.id
+      WHERE c.meal_date = ? AND c.meal_type = ? AND c.status = 'active'
+    `;
+    const params = [today, mealType];
+
+    if (messHall && VALID_MESS_CODES.includes(messHall)) {
+      sql += ' AND c.mess_hall = ?';
+      params.push(messHall);
+    }
+
+    sql += ' ORDER BY u.roll_no ASC';
+
+    const [claims] = await db.query(sql, params);
 
     return res.status(200).json({
       meal_date: today,
@@ -289,7 +310,7 @@ router.post('/claims/:coupon_id', async (req, res) => {
  * Issue spot coupon for walk-in { student_roll_no, meal_type }
  */
 router.post('/spot-coupon', async (req, res) => {
-  const { student_roll_no, meal_type } = req.body;
+  const { student_roll_no, meal_type, mess_hall } = req.body;
   const adminId = req.session.user.id;
 
   if (!student_roll_no || !meal_type) {
@@ -306,7 +327,7 @@ router.post('/spot-coupon', async (req, res) => {
     await connection.beginTransaction();
 
     const [students] = await connection.query(
-      'SELECT id, roll_no, name, hostel, room_no FROM users WHERE roll_no = ? AND role = "student" AND is_active = TRUE',
+      'SELECT id, roll_no, name, hostel, mess_hall, room_no FROM users WHERE roll_no = ? AND role = "student" AND is_active = TRUE',
       [student_roll_no.trim().toUpperCase()]
     );
 
@@ -316,6 +337,9 @@ router.post('/spot-coupon', async (req, res) => {
     }
 
     const student = students[0];
+    const targetMess = mess_hall && VALID_MESS_CODES.includes(mess_hall)
+      ? mess_hall
+      : normalizeMessHall(student.mess_hall, 'mess_1');
     const today = getTodayIST();
 
     // Check if student already has a coupon for today's meal
@@ -347,9 +371,9 @@ router.post('/spot-coupon', async (req, res) => {
 
     // 2. Create coupon record (status='used', source='spot', claimed_at=NOW())
     const [couponResult] = await connection.query(
-      `INSERT INTO coupons (student_id, meal_type, meal_date, source, status, claimed_at)
-       VALUES (?, ?, ?, 'spot', 'used', CURRENT_TIMESTAMP)`,
-      [student.id, normalizedMeal, today]
+      `INSERT INTO coupons (student_id, mess_hall, meal_type, meal_date, source, status, claimed_at)
+       VALUES (?, ?, ?, ?, 'spot', 'used', CURRENT_TIMESTAMP)`,
+      [student.id, targetMess, normalizedMeal, today]
     );
 
     await connection.commit();
@@ -358,6 +382,7 @@ router.post('/spot-coupon', async (req, res) => {
       message: `Spot coupon issued and marked as used for ${student.name} (${student.roll_no}).`,
       coupon_id: couponResult.insertId,
       payment_id: paymentResult.insertId,
+      mess_hall: targetMess,
       amount,
       meal_type: normalizedMeal,
       meal_date: today
@@ -377,10 +402,10 @@ router.post('/spot-coupon', async (req, res) => {
  */
 router.get('/complaints', async (req, res) => {
   try {
-    const { status, date } = req.query;
+    const { status, date, mess_hall, routing_type } = req.query;
     let sql = `
-      SELECT c.id, c.student_id, c.meal_date, c.meal_type, c.category, c.description, c.is_anonymous, c.status,
-             c.response, c.resolved_at, c.created_at,
+      SELECT c.id, c.student_id, c.mess_hall, c.meal_date, c.meal_type, c.category, c.routing_type,
+             c.description, c.is_anonymous, c.status, c.response, c.vendor_note, c.resolved_at, c.created_at,
              CASE WHEN c.is_anonymous = TRUE THEN 'Anonymous' ELSE u.roll_no END AS roll_no,
              CASE WHEN c.is_anonymous = TRUE THEN 'Anonymous Student' ELSE u.name END AS student_name,
              CASE WHEN c.is_anonymous = TRUE THEN '' ELSE u.hostel END AS hostel,
@@ -393,13 +418,21 @@ router.get('/complaints', async (req, res) => {
     `;
     const params = [];
 
-    if (status) {
+    if (status && VALID_COMPLAINT_STATUSES.includes(status)) {
       sql += ' AND c.status = ?';
       params.push(status);
     }
     if (date) {
       sql += ' AND c.meal_date = ?';
       params.push(date);
+    }
+    if (mess_hall && VALID_MESS_CODES.includes(mess_hall)) {
+      sql += ' AND c.mess_hall = ?';
+      params.push(mess_hall);
+    }
+    if (routing_type && VALID_ROUTING_TYPES.includes(routing_type)) {
+      sql += ' AND c.routing_type = ?';
+      params.push(routing_type);
     }
 
     sql += ' ORDER BY c.created_at DESC';
@@ -414,32 +447,36 @@ router.get('/complaints', async (req, res) => {
 
 /**
  * 9. PUT /api/admin/complaints/:id
- * Respond to complaint { response, status: "in_progress"|"resolved" }
+ * Respond to complaint { response, status, vendor_note }
  */
 router.put('/complaints/:id', async (req, res) => {
   try {
     const complaintId = parseInt(req.params.id, 10);
-    const { response, status } = req.body;
+    const { response, status, vendor_note } = req.body;
     const adminId = req.session.user.id;
 
     if (!response || !status) {
       return res.status(400).json({ error: 'Please provide response text and updated status.' });
     }
 
-    if (!['open', 'in_progress', 'resolved'].includes(status)) {
-      return res.status(400).json({ error: 'Status must be open, in_progress, or resolved.' });
+    if (!VALID_COMPLAINT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: 'Status must be open, in_progress, escalated_to_vendor, or resolved.' });
     }
 
     const isResolved = (status === 'resolved');
+    const cleanVendorNote = vendor_note !== undefined && String(vendor_note).trim()
+      ? String(vendor_note).trim()
+      : null;
 
     const [result] = await db.query(
       `UPDATE complaints
        SET response = ?,
+           vendor_note = COALESCE(?, vendor_note),
            status = ?,
            responded_by = ?,
            resolved_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE resolved_at END
        WHERE id = ?`,
-      [response.trim(), status, adminId, isResolved, complaintId]
+      [response.trim(), cleanVendorNote, status, adminId, isResolved, complaintId]
     );
 
     if (result.matchedRows === 0) {

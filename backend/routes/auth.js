@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { VALID_MESS_CODES, normalizeMessHall } = require('../utils/messConfig');
 
 // Rate limiting on login and register
 router.use('/login', authLimiter);
@@ -14,10 +15,10 @@ router.use('/register', authLimiter);
  */
 router.post('/register', async (req, res) => {
   try {
-    const { roll_no, name, email, password, hostel, room_no } = req.body;
+    const { roll_no, name, email, password, hostel, mess_hall, room_no } = req.body;
 
     if (!roll_no || !name || !email || !password || !hostel) {
-      return res.status(400).json({ error: 'Please provide roll number, name, email, password, and hostel.' });
+      return res.status(400).json({ error: 'Please provide roll number, name, email, password, and hostel wing.' });
     }
 
     const trimmedRoll = roll_no.trim().toUpperCase();
@@ -25,6 +26,10 @@ router.post('/register', async (req, res) => {
     const trimmedName = name.trim();
     const trimmedHostel = hostel.trim();
     const trimmedRoom = (room_no || '').trim();
+    const chosenMess = mess_hall ? normalizeMessHall(mess_hall, null) : 'mess_1';
+    if (!chosenMess || !VALID_MESS_CODES.includes(chosenMess)) {
+      return res.status(400).json({ error: 'Please select a valid Mess (Ground & 1st Floor Mess or New Mess).' });
+    }
 
     // Roll number format validation: college format alphanumeric 3-20 chars
     const rollRegex = /^[A-Z0-9_-]{3,20}$/;
@@ -60,9 +65,9 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      `INSERT INTO users (roll_no, name, email, password_hash, hostel, room_no, role, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, 'student', TRUE)`,
-      [trimmedRoll, trimmedName, trimmedEmail, passwordHash, trimmedHostel, trimmedRoom]
+      `INSERT INTO users (roll_no, name, email, password_hash, hostel, mess_hall, room_no, role, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', TRUE)`,
+      [trimmedRoll, trimmedName, trimmedEmail, passwordHash, trimmedHostel, chosenMess, trimmedRoom]
     );
 
     const newUser = {
@@ -71,6 +76,7 @@ router.post('/register', async (req, res) => {
       name: trimmedName,
       email: trimmedEmail,
       hostel: trimmedHostel,
+      mess_hall: chosenMess,
       room_no: trimmedRoom,
       role: 'student'
     };
@@ -104,7 +110,7 @@ router.post('/login', async (req, res) => {
 
     // Query user by email or roll_no (case-insensitive for email, uppercase for roll_no)
     const [rows] = await db.query(
-      `SELECT id, roll_no, name, email, password_hash, hostel, room_no, role, is_active
+      `SELECT id, roll_no, name, email, password_hash, hostel, mess_hall, room_no, role, is_active
        FROM users
        WHERE roll_no = ? OR email = ?
        LIMIT 1`,
@@ -132,6 +138,7 @@ router.post('/login', async (req, res) => {
       name: user.name,
       email: user.email,
       hostel: user.hostel,
+      mess_hall: user.mess_hall || 'mess_1',
       room_no: user.room_no,
       role: user.role
     };

@@ -109,6 +109,7 @@
         <p class="tabular-nums" style="font-size: 13px; color: var(--text-muted); margin-top: 2px;" id="pass-date">-</p>
         <div id="pass-qr" style="margin: 18px auto; padding: 14px; background: #ffffff; border-radius: 12px; display: inline-block; border: 1px solid var(--border-color); color: #0f172a;"></div>
         <div class="tabular-nums" style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="pass-code">#CPN-0000</div>
+        <div style="font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 4px;" id="pass-mess">Ground &amp; 1st Floor Mess</div>
         <div class="mt-3">
           <span class="handwritten-stamp">Valid Entry &middot; IIIT Mess</span>
         </div>
@@ -194,12 +195,12 @@
                   ${escapeHtml(c.meal_type)}
                 </div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                  Source: ${escapeHtml(c.source)}${c.claimed_at ? ` &middot; Claimed ${c.claimed_at.substring(11, 16)}` : ''}
+                  ${escapeHtml(formatMessName(c.mess_hall))} &middot; ${escapeHtml(c.source)}${c.claimed_at ? ` &middot; Claimed ${c.claimed_at.substring(11, 16)}` : ''}
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span>
-                ${canSkip ? `<button class="btn btn-sm btn-primary" onclick="openDiningPass(${c.id}, '${escapeHtml(c.meal_type)}', '${dateStr}')">Pass</button>` : ''}
+                ${canSkip ? `<button class="btn btn-sm btn-primary" onclick="openDiningPass(${c.id}, '${escapeHtml(c.meal_type)}', '${dateStr}', '${escapeHtml(c.mess_hall || 'mess_1')}')">Pass</button>` : ''}
                 ${canSkip ? `<button class="btn btn-sm btn-secondary" onclick="skipCoupon(${c.id})">Skip</button>` : ''}
               </div>
             `;
@@ -211,13 +212,14 @@
       }
     }
 
-    function openDiningPass(couponId, mealType, dateStr) {
+    function openDiningPass(couponId, mealType, dateStr, messHall) {
       document.getElementById('pass-roll').textContent = currentUser ? `${currentUser.roll_no} · ${currentUser.name}` : 'IIIT Student';
       document.getElementById('pass-meal').textContent = mealType;
       document.getElementById('pass-date').textContent = formatDate(dateStr);
       const code = `CPN-${String(couponId).padStart(4, '0')}`;
       document.getElementById('pass-code').textContent = `#${code}`;
-      document.getElementById('pass-qr').innerHTML = buildPassPatternSvg(`IIIT-MESS:${code}:${mealType}:${dateStr}`, 144);
+      document.getElementById('pass-mess').textContent = formatMessName(messHall, true);
+      document.getElementById('pass-qr').innerHTML = buildPassPatternSvg(`IIIT-MESS:${code}:${messHall || 'mess_1'}:${mealType}:${dateStr}`, 144);
       document.getElementById('pass-modal').classList.add('active');
     }
 

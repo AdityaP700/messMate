@@ -73,7 +73,8 @@
               <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.025em; color: var(--text-main);" id="welcome-name">Student</h2>
               <div class="meta-pills">
                 <span class="meta-pill">Roll: <strong id="welcome-roll">-</strong></span>
-                <span class="meta-pill">Hostel: <strong id="welcome-hostel">-</strong></span>
+                <span class="meta-pill">Wing: <strong id="welcome-hostel">-</strong></span>
+                <span class="meta-pill">Mess: <strong id="welcome-mess">-</strong></span>
                 <span class="meta-pill">Room: <strong id="welcome-room">-</strong></span>
               </div>
             </div>
@@ -240,6 +241,7 @@
 
       document.getElementById('welcome-name').textContent = currentUser.name;
       document.getElementById('welcome-hostel').textContent = currentUser.hostel;
+      document.getElementById('welcome-mess').textContent = formatMessName(currentUser.mess_hall);
       document.getElementById('welcome-room').textContent = currentUser.room_no || 'N/A';
       document.getElementById('welcome-roll').textContent = currentUser.roll_no;
 
@@ -392,7 +394,7 @@
           div.innerHTML = `
             <div>
               <div class="coupon-date tabular-nums">${formatDate(c.meal_date)}</div>
-              <div class="coupon-meal">${escapeHtml(c.meal_type)} &middot; ${escapeHtml(c.source)}</div>
+              <div class="coupon-meal">${escapeHtml(c.meal_type)} &middot; ${escapeHtml(formatMessName(c.mess_hall))}</div>
             </div>
             <div>
               <span class="badge badge-${c.status}">${escapeHtml(c.status)}</span>

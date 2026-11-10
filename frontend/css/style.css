@@ -961,6 +961,11 @@ html.dark .hero-card-accent {
   color: var(--warning);
 }
 
+.badge-escalated_to_vendor {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
 .badge-rejected,
 .badge-expired {
   background-color: var(--danger-light);

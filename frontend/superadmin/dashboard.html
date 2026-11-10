@@ -111,6 +111,11 @@
               </div>
               <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
               <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--primary);" id="comp-escalated">0</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Escalated to Vendor</div>
+              </div>
+              <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
+              <div style="text-align: center; flex: 1;">
                 <div class="tabular-nums" style="font-size: 26px; font-weight: 700; color: var(--accent);" id="comp-resolved">0</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Resolved</div>
               </div>
@@ -162,8 +167,8 @@
         <div class="card mt-20">
           <div class="card-header">
             <div>
-              <h3 class="card-title">Daily Food Consumption, Skips &amp; Waste Projection</h3>
-              <p class="card-subtitle">Estimated sustainability savings and projected unclaimed food waste across all hostels (<span id="sa-ana-noshow">0</span>% historical no-show baseline)</p>
+              <h3 class="card-title">Dual-Vendor Mess Consumption, Skips &amp; Waste Projection</h3>
+              <p class="card-subtitle">Shared dining across Ground &amp; 1st Floor Mess (Vendor 1) and New Mess (Vendor 2) &middot; <span id="sa-ana-noshow">0</span>% no-show baseline</p>
             </div>
             <span class="badge badge-success" id="sa-prevention-badge">Prevention: 0%</span>
           </div>
@@ -210,6 +215,24 @@
             </div>
           </div>
 
+          <div class="table-container" style="margin-bottom: 16px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mess &amp; Operator</th>
+                  <th>Dining / Skips</th>
+                  <th>Prep Target</th>
+                  <th>Saved (kg)</th>
+                  <th>Projected Waste</th>
+                  <th>Vendor Escalation &amp; SLA</th>
+                </tr>
+              </thead>
+              <tbody id="sa-mess-tbody">
+                <tr><td colspan="6" class="text-center text-muted">Loading vendor comparison...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
           <div class="table-container">
             <table class="table">
               <thead>
@@ -253,6 +276,7 @@
         const ac = ana.complaints || {};
         document.getElementById('comp-total').textContent = c.total_complaints || 0;
         document.getElementById('comp-open').textContent = c.open_complaints || 0;
+        document.getElementById('comp-escalated').textContent = c.escalated_complaints || 0;
         document.getElementById('comp-resolved').textContent = c.resolved_complaints || 0;
         document.getElementById('comp-redressal-rate').textContent = `${ac.redressal_rate_pct ?? 0}%`;
         document.getElementById('comp-avg-hours').textContent = `${ac.avg_resolution_hours ?? 0}h`;
@@ -271,23 +295,8 @@
         document.getElementById('sa-waste-portions').textContent = t.projected_wasted_portions ?? 0;
         document.getElementById('sa-prep').textContent = t.recommended_prep_portions ?? 0;
 
-        const byMeal = ana.by_meal || {};
-        const order = ['breakfast', 'lunch', 'snacks', 'dinner'];
-        document.getElementById('sa-meal-tbody').innerHTML = order.map(m => {
-          const row = byMeal[m] || {};
-          const label = m.charAt(0).toUpperCase() + m.slice(1);
-          return `
-            <tr>
-              <td><strong>${label}</strong></td>
-              <td class="tabular-nums">${row.ate ?? 0}</td>
-              <td class="tabular-nums">${row.skipped ?? 0}</td>
-              <td class="tabular-nums">${row.on_leave ?? 0}</td>
-              <td class="tabular-nums"><strong>${row.recommended_cook ?? 0}</strong> plates</td>
-              <td class="tabular-nums" style="color: var(--accent);">${Number(row.food_saved_kg || 0).toFixed(1)} kg</td>
-              <td class="tabular-nums" style="color: var(--danger);">${Number(row.projected_waste_kg || 0).toFixed(1)} kg</td>
-            </tr>
-          `;
-        }).join('');
+        document.getElementById('sa-mess-tbody').innerHTML = renderVendorBreakdownRows(ana.by_mess);
+        document.getElementById('sa-meal-tbody').innerHTML = renderMealBreakdownRows(ana.by_meal);
       } catch (err) {
         console.error('Superadmin stats load error:', err);
       }

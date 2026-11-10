@@ -10,6 +10,12 @@ const {
   canSkipMeal,
   MEAL_SCHEDULE
 } = require('../utils/time');
+const {
+  MESS_HALLS,
+  VALID_MESS_CODES,
+  VALID_ROUTING_TYPES,
+  normalizeMessHall
+} = require('../utils/messConfig');
 
 // All routes require student role
 router.use(isAuthenticated, hasRole('student'));
@@ -40,7 +46,7 @@ async function getSettingsMap() {
 router.get('/settings', async (req, res) => {
   try {
     const settings = await getSettingsMap();
-    return res.status(200).json({ settings });
+    return res.status(200).json({ settings, messes: MESS_HALLS });
   } catch (err) {
     console.error('Settings fetch error:', err);
     return res.status(500).json({ error: 'Failed to load mess settings.' });
@@ -97,8 +103,14 @@ router.post('/coupons/buy', upload.single('screenshot'), async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    let { start_date, end_date, meals_selected, includes_sunday, payment_method } = req.body;
+    let { start_date, end_date, meals_selected, includes_sunday, payment_method, mess_hall } = req.body;
     const studentId = req.session.user.id;
+    const defaultMess = normalizeMessHall(req.session.user.mess_hall, 'mess_1');
+    const selectedMess = mess_hall ? normalizeMessHall(mess_hall, null) : (VALID_MESS_CODES.includes(defaultMess) ? defaultMess : 'mess_1');
+    if (!selectedMess || !VALID_MESS_CODES.includes(selectedMess)) {
+      await connection.rollback();
+      return res.status(400).json({ error: 'Please select a valid campus mess.' });
+    }
 
     if (!start_date || !end_date || !meals_selected || !payment_method) {
       await connection.rollback();
@@ -203,17 +215,18 @@ router.post('/coupons/buy', upload.single('screenshot'), async (req, res) => {
 
     // 2. Create coupon order record
     const [orderResult] = await connection.query(
-      `INSERT INTO coupon_orders (student_id, payment_id, start_date, end_date, meals_selected, includes_sunday)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [studentId, paymentId, start_date, end_date, JSON.stringify(meals_selected), isSundayIncluded]
+      `INSERT INTO coupon_orders (student_id, mess_hall, payment_id, start_date, end_date, meals_selected, includes_sunday)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [studentId, selectedMess, paymentId, start_date, end_date, JSON.stringify(meals_selected), isSundayIncluded]
     );
 
     await connection.commit();
 
     return res.status(201).json({
-      message: 'Coupon order submitted successfully. Awaiting payment verification by admin.',
+      message: 'Coupon order submitted successfully. Awaiting verification.',
       order_id: orderResult.insertId,
       payment_id: paymentId,
+      mess_hall: selectedMess,
       amount: totalAmount,
       status: 'pending'
     });
@@ -236,7 +249,7 @@ router.get('/coupons', async (req, res) => {
     const { status, date } = req.query;
 
     let sql = `
-      SELECT id, student_id, meal_type, meal_date, source, status, claimed_at, created_at
+      SELECT id, student_id, mess_hall, meal_type, meal_date, source, status, claimed_at, created_at
       FROM coupons
       WHERE student_id = ?
     `;
@@ -396,7 +409,7 @@ router.get('/leave', async (req, res) => {
 router.post('/complaints', async (req, res) => {
   try {
     const studentId = req.session.user.id;
-    const { meal_type, category, description, is_anonymous } = req.body;
+    const { meal_type, category, description, is_anonymous, mess_hall, routing_type } = req.body;
 
     if (!meal_type || !category || !description) {
       return res.status(400).json({ error: 'Please provide meal_type, category, and description.' });
@@ -405,6 +418,17 @@ router.post('/complaints', async (req, res) => {
     const validCategories = ['food_quality', 'hygiene', 'quantity', 'staff_behavior', 'other'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid complaint category.' });
+    }
+
+    const fallbackMess = normalizeMessHall(req.session.user.mess_hall, 'mess_1');
+    const selectedMess = mess_hall ? normalizeMessHall(mess_hall, null) : (VALID_MESS_CODES.includes(fallbackMess) ? fallbackMess : 'mess_1');
+    if (!selectedMess || !VALID_MESS_CODES.includes(selectedMess)) {
+      return res.status(400).json({ error: 'Invalid mess hall specified.' });
+    }
+
+    const normalizedRoute = routing_type ? String(routing_type).trim().toLowerCase() : 'via_mess_rep';
+    if (!VALID_ROUTING_TYPES.includes(normalizedRoute)) {
+      return res.status(400).json({ error: 'Routing type must be via_mess_rep or direct.' });
     }
 
     const normalizedMeal = meal_type.toLowerCase();
@@ -424,14 +448,17 @@ router.post('/complaints', async (req, res) => {
     const anonFlag = Boolean(is_anonymous === true || is_anonymous === 'true');
 
     const [result] = await db.query(
-      `INSERT INTO complaints (student_id, meal_date, meal_type, category, description, is_anonymous, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'open')`,
-      [studentId, todayIST, normalizedMeal, category, description.trim(), anonFlag]
+      `INSERT INTO complaints (student_id, mess_hall, meal_date, meal_type, category, routing_type, description, is_anonymous, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+      [studentId, selectedMess, todayIST, normalizedMeal, category, normalizedRoute, description.trim(), anonFlag]
     );
 
+    const routeLabel = normalizedRoute === 'via_mess_rep' ? 'Mess Representative team' : 'direct Mess Office & Dean queue';
     return res.status(201).json({
-      message: anonFlag ? 'Anonymous complaint submitted successfully.' : 'Complaint submitted successfully.',
+      message: anonFlag ? `Anonymous complaint routed to ${routeLabel}.` : `Complaint routed to ${routeLabel}.`,
       complaint_id: result.insertId,
+      mess_hall: selectedMess,
+      routing_type: normalizedRoute,
       meal_date: todayIST,
       status: 'open'
     });
@@ -449,8 +476,9 @@ router.get('/complaints', async (req, res) => {
   try {
     const studentId = req.session.user.id;
     const [complaints] = await db.query(
-      `SELECT c.id, c.meal_date, c.meal_type, c.category, c.description, c.is_anonymous, c.status,
-              c.response, c.resolved_at, c.created_at, u.name as responded_by_name
+      `SELECT c.id, c.mess_hall, c.meal_date, c.meal_type, c.category, c.routing_type,
+              c.description, c.is_anonymous, c.status, c.response, c.vendor_note,
+              c.resolved_at, c.created_at, u.name as responded_by_name
        FROM complaints c
        LEFT JOIN users u ON c.responded_by = u.id
        WHERE c.student_id = ?
@@ -473,7 +501,7 @@ router.get('/payments', async (req, res) => {
     const studentId = req.session.user.id;
     const [payments] = await db.query(
       `SELECT p.id, p.amount, p.method, p.screenshot_path, p.status, p.notes, p.created_at,
-              o.start_date, o.end_date, o.meals_selected, o.includes_sunday
+              o.mess_hall, o.start_date, o.end_date, o.meals_selected, o.includes_sunday
        FROM payments p
        LEFT JOIN coupon_orders o ON p.id = o.payment_id
        WHERE p.student_id = ?
