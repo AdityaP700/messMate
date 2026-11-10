@@ -139,7 +139,7 @@ async function ensureExtraTables() {
       await seedMockData();
     }
   } catch (err) {
-    console.error('[Init] Schema sync skipped:', err.code || err.message);
+    console.error('[Init] Schema sync skipped:', err.code || '', err.message);
   }
 }
 
@@ -158,7 +158,7 @@ async function expirePastCoupons() {
     }
   } catch (err) {
     // If database is not yet ready or tables not created, log softly
-    console.error('[Maintenance] Expire coupons check error:', err.code || err.message);
+    console.error('[Maintenance] Expire coupons check error:', err.code || '', err.message);
   }
 }
 
