@@ -6,7 +6,7 @@ const sslConfig = process.env.DB_SSL === 'true'
   : undefined;
 
 const rawHost = process.env.DB_HOST || process.env.MYSQLHOST || 'localhost';
-const cleanHost = String(rawHost).trim().replace(/^https?:\/\//i, '').replace(/:\d+$/, '').trim();
+const cleanHost = String(rawHost).trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/:\d+$/, '').trim();
 const rawUser = process.env.DB_USER || process.env.MYSQLUSER || 'root';
 const rawPass = process.env.DB_PASS ?? process.env.MYSQLPASSWORD ?? 'root';
 const rawDb = process.env.DB_NAME || process.env.MYSQLDATABASE || 'iiit_mess';
