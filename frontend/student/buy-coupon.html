@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buy Meal Coupons - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link active">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Purchase Meal Coupons</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Coupon Subscription Order</h3>
+              <p class="card-subtitle">
+                Pick a date range, select your daily meals, and submit payment for verification.
+              </p>
+            </div>
+          </div>
+
+          <form id="buy-coupons-form">
+            <div class="step-section">
+              <div class="step-heading">
+                <span class="step-num">1</span> Select Date Range
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="start_date">Start Date *</label>
+                  <input type="date" id="start_date" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="end_date">End Date *</label>
+                  <input type="date" id="end_date" class="form-input" required>
+                </div>
+              </div>
+              <div id="sunday-toggle-group">
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-secondary);">
+                  <input type="checkbox" id="includes_sunday" checked>
+                  <span><strong style="color: var(--text-main);">Include Sunday Meals</strong> (opt-in for weekend dining)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="step-section">
+              <div class="flex justify-between items-center mb-3" style="flex-wrap: wrap; gap: 8px;">
+                <div class="step-heading" style="margin-bottom: 0;">
+                  <span class="step-num">2</span> Choose Meals Per Day
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" onclick="selectAllMeals(true)">Select All</button>
+                  <button type="button" class="btn btn-sm btn-secondary" onclick="selectAllMeals(false)">Clear All</button>
+                </div>
+              </div>
+
+              <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px;">
+                <table class="table" id="meals-selection-table">
+                  <thead>
+                    <tr>
+                      <th>Day</th>
+                      <th>Breakfast (<span id="th-breakfast-price">₹30</span>)</th>
+                      <th>Lunch (<span id="th-lunch-price">₹50</span>)</th>
+                      <th>Snacks (<span id="th-snacks-price">₹15</span>)</th>
+                      <th>Dinner (<span id="th-dinner-price">₹50</span>)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="days-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="step-section">
+              <div class="step-heading">
+                <span class="step-num">3</span> Payment Method
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Select Payment Mode *</label>
+                  <div class="flex gap-4 mt-2" style="flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+                      <input type="radio" name="payment_method" value="online" checked onchange="togglePaymentMethod()">
+                      <span>Online (UPI / QR)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+                      <input type="radio" name="payment_method" value="cash" onchange="togglePaymentMethod()">
+                      <span>Cash at Mess Office</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group" id="screenshot-upload-group">
+                  <label class="form-label" for="screenshot">Upload Payment Screenshot *</label>
+                  <input type="file" id="screenshot" accept="image/jpeg,image/png,image/jpg" class="form-input">
+                  <span class="form-help">JPG or PNG, max 5MB</span>
+                </div>
+              </div>
+
+              <div id="upi-info-box" style="margin-top: 8px; padding: 14px 16px; background: var(--glass-bg-strong); border-radius: 10px; border: 1px solid var(--primary-border); display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+                <div id="upi-qr-preview" style="padding: 8px; background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color); color: #0f172a;"></div>
+                <div style="flex: 1; min-width: 200px;">
+                  <div class="handwritten" style="font-size: 19px; color: var(--primary);">Scan & Pay via UPI</div>
+                  <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
+                    <strong>UPI ID:</strong> <code>mess@iiitbbsr</code>
+                  </div>
+                  <div class="tabular-nums" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    Pay exact total (<strong id="upi-qr-amount">₹0.00</strong>) and upload the confirmation screenshot above.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-card hero-card-accent" style="margin-bottom: 0;">
+              <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);">Order Summary</div>
+                  <div class="tabular-nums" style="font-size: 13.5px; color: var(--text-secondary); margin-top: 2px;">
+                    Meals Selected: <strong id="summary-total-meals">0</strong>
+                    <span style="margin: 0 8px;">&middot;</span>
+                    Total Payable: <strong style="font-size: 20px; color: var(--accent);" id="summary-total-amount">₹0.00</strong>
+                  </div>
+                </div>
+                <button type="submit" id="submit-order-btn" class="btn btn-primary" style="padding: 10px 22px;">
+                  Submit Order & Payment
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let messSettings = {};
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['student']);
+      await loadSettings();
+      initDates();
+      renderDaysTable();
+      calculateTotal();
+    });
+
+    async function loadSettings() {
+      try {
+        const data = await api('/api/student/settings');
+        messSettings = data.settings || {};
+
+        document.getElementById('th-breakfast-price').textContent = formatCurrency(messSettings.breakfast_price || 30);
+        document.getElementById('th-lunch-price').textContent = formatCurrency(messSettings.lunch_price || 50);
+        document.getElementById('th-snacks-price').textContent = formatCurrency(messSettings.snacks_price || 15);
+        document.getElementById('th-dinner-price').textContent = formatCurrency(messSettings.dinner_price || 50);
+
+        if (messSettings.sunday_opt_in === 'false') {
+          const group = document.getElementById('sunday-toggle-group');
+          if (group) group.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Settings load error:', err);
+      }
+    }
+
+    function initDates() {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      const startDateInput = document.getElementById('start_date');
+      const endDateInput = document.getElementById('end_date');
+
+      startDateInput.min = today;
+      startDateInput.value = today;
+
+      const endD = new Date();
+      endD.setDate(endD.getDate() + 6);
+      const endStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(endD);
+      endDateInput.min = today;
+      endDateInput.value = endStr;
+
+      startDateInput.addEventListener('change', () => {
+        endDateInput.min = startDateInput.value;
+        if (endDateInput.value < startDateInput.value) {
+          endDateInput.value = startDateInput.value;
+        }
+        calculateTotal();
+      });
+
+      endDateInput.addEventListener('change', calculateTotal);
+      document.getElementById('includes_sunday').addEventListener('change', calculateTotal);
+    }
+
+    function renderDaysTable() {
+      const tbody = document.getElementById('days-table-body');
+      tbody.innerHTML = '';
+
+      dayNames.forEach(day => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong style="color: var(--text-main);">${day}</strong></td>
+          <td><input type="checkbox" class="meal-check" data-day="${day}" data-meal="breakfast" checked onchange="calculateTotal()"></td>
+          <td><input type="checkbox" class="meal-check" data-day="${day}" data-meal="lunch" checked onchange="calculateTotal()"></td>
+          <td><input type="checkbox" class="meal-check" data-day="${day}" data-meal="snacks" checked onchange="calculateTotal()"></td>
+          <td><input type="checkbox" class="meal-check" data-day="${day}" data-meal="dinner" checked onchange="calculateTotal()"></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function selectAllMeals(checked) {
+      document.querySelectorAll('.meal-check').forEach(cb => cb.checked = checked);
+      calculateTotal();
+    }
+
+    function getSelectedMealsObject() {
+      const result = {};
+      dayNames.forEach(d => result[d] = []);
+
+      document.querySelectorAll('.meal-check:checked').forEach(cb => {
+        const day = cb.getAttribute('data-day');
+        const meal = cb.getAttribute('data-meal');
+        if (result[day]) result[day].push(meal);
+      });
+      return result;
+    }
+
+    function calculateTotal() {
+      const startDateVal = document.getElementById('start_date').value;
+      const endDateVal = document.getElementById('end_date').value;
+      const includesSunday = document.getElementById('includes_sunday').checked;
+
+      if (!startDateVal || !endDateVal || startDateVal > endDateVal) {
+        document.getElementById('summary-total-meals').textContent = '0';
+        document.getElementById('summary-total-amount').textContent = '₹0.00';
+        return 0;
+      }
+
+      const prices = {
+        breakfast: parseFloat(messSettings.breakfast_price || 30),
+        lunch: parseFloat(messSettings.lunch_price || 50),
+        snacks: parseFloat(messSettings.snacks_price || 15),
+        dinner: parseFloat(messSettings.dinner_price || 50)
+      };
+
+      const selectedMeals = getSelectedMealsObject();
+      let totalMealsCount = 0;
+      let totalAmount = 0;
+
+      const start = new Date(`${startDateVal}T00:00:00`);
+      const end = new Date(`${endDateVal}T00:00:00`);
+      const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dayName = fullDayNames[d.getDay()];
+        if (dayName === 'Sunday' && !includesSunday) continue;
+
+        (selectedMeals[dayName] || []).forEach(meal => {
+          totalMealsCount++;
+          totalAmount += (prices[meal] || 0);
+        });
+      }
+
+      document.getElementById('summary-total-meals').textContent = totalMealsCount;
+      document.getElementById('summary-total-amount').textContent = formatCurrency(totalAmount);
+      const qrAmtEl = document.getElementById('upi-qr-amount');
+      const qrBoxEl = document.getElementById('upi-qr-preview');
+      if (qrAmtEl) qrAmtEl.textContent = formatCurrency(totalAmount);
+      if (qrBoxEl) qrBoxEl.innerHTML = buildPassPatternSvg(`upi://pay?pa=mess@iiitbbsr&am=${totalAmount}`, 88);
+      return totalAmount;
+    }
+
+    function togglePaymentMethod() {
+      const method = document.querySelector('input[name="payment_method"]:checked').value;
+      const uploadGroup = document.getElementById('screenshot-upload-group');
+      const upiBox = document.getElementById('upi-info-box');
+
+      if (method === 'online') {
+        uploadGroup.style.display = 'flex';
+        upiBox.style.display = 'flex';
+      } else {
+        uploadGroup.style.display = 'none';
+        upiBox.style.display = 'none';
+      }
+    }
+
+    const buyForm = document.getElementById('buy-coupons-form');
+    const submitBtn = document.getElementById('submit-order-btn');
+
+    buyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const startDateVal = document.getElementById('start_date').value;
+      const endDateVal = document.getElementById('end_date').value;
+      const includesSunday = document.getElementById('includes_sunday').checked;
+      const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+      const screenshotInput = document.getElementById('screenshot');
+
+      const total = calculateTotal();
+      if (total <= 0) {
+        showToast('Please select at least one meal for the date range.', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('start_date', startDateVal);
+      formData.append('end_date', endDateVal);
+      formData.append('includes_sunday', includesSunday);
+      formData.append('payment_method', paymentMethod);
+      formData.append('meals_selected', JSON.stringify(getSelectedMealsObject()));
+
+      if (paymentMethod === 'online') {
+        if (!screenshotInput.files || screenshotInput.files.length === 0) {
+          showToast('Please upload a payment screenshot for online payments.', 'error');
+          return;
+        }
+        formData.append('screenshot', screenshotInput.files[0]);
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/student/coupons/buy', {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit order.');
+
+        showToast('Order placed. Awaiting admin verification.', 'success');
+        setTimeout(() => {
+          window.location.href = '/student/payment-history.html';
+        }, 900);
+      } catch (err) {
+        showToast(err.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Order & Payment';
+      }
+    });
+  </script>
+</body>
+</html>

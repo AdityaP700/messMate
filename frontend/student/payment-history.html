@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment History - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link active">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Payment History</h2>
+        </div>
+        <a href="/student/buy-coupon.html" class="btn btn-primary btn-sm">+ Make Payment</a>
+      </header>
+
+      <main class="page-body">
+        <div class="card card-flush">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Transaction Log</h3>
+              <p class="card-subtitle">Status of coupon orders and payment verifications</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadPayments()">Refresh</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Receipt</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading payment records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="image-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 class="modal-title">Payment Receipt</h4>
+        <button class="modal-close" onclick="closeImageModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <img id="modal-img-preview" src="" alt="Payment Receipt" style="max-width: 100%; border-radius: 8px;">
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['student']);
+      loadPayments();
+    });
+
+    async function loadPayments() {
+      const tbody = document.getElementById('payments-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading payment records...</td></tr>';
+
+      try {
+        const data = await api('/api/student/payments');
+        if (!data.payments || data.payments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">No payment transactions recorded yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        data.payments.forEach(p => {
+          const tr = document.createElement('tr');
+          const screenshotHtml = p.screenshot_path ? `
+            <button type="button" class="btn btn-sm btn-secondary" onclick="viewScreenshot('${escapeHtml(p.screenshot_path)}')">View</button>
+          ` : '<span style="color: var(--text-light);">-</span>';
+
+          tr.innerHTML = `
+            <td class="nowrap tabular-nums">#${p.id}</td>
+            <td class="nowrap tabular-nums">${formatDate(p.created_at)}</td>
+            <td class="nowrap tabular-nums"><strong style="color: var(--text-main);">${formatCurrency(p.amount)}</strong></td>
+            <td class="nowrap" style="text-transform: uppercase; font-size: 12px; font-weight: 600;">${escapeHtml(p.method)}</td>
+            <td class="nowrap">${screenshotHtml}</td>
+            <td class="nowrap"><span class="badge badge-${p.status}">${escapeHtml(p.status)}</span></td>
+            <td>${escapeHtml(p.notes || '-')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger);">Failed to load payment history: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function viewScreenshot(src) {
+      document.getElementById('modal-img-preview').src = src;
+      document.getElementById('image-modal').classList.add('active');
+    }
+
+    function closeImageModal() {
+      document.getElementById('image-modal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Complaints - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link active">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Complaints & Grievances</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card" style="padding: 14px 18px;">
+          <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 12px;">
+            <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+              <div class="flex items-center gap-2">
+                <label for="filter-status" class="form-label" style="margin: 0;">Status</label>
+                <select id="filter-status" class="form-select" style="width: auto;">
+                  <option value="">All Statuses</option>
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="filter-date" class="form-label" style="margin: 0;">Date</label>
+                <input type="date" id="filter-date" class="form-input" style="width: auto;">
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm" onclick="loadComplaints()">Apply</button>
+              <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Complaints (<span id="complaints-count">0</span>)</h3>
+            <button class="btn btn-secondary btn-sm" onclick="loadComplaints()">Refresh</button>
+          </div>
+
+          <div id="complaints-container" class="flex flex-col gap-3">
+            <p style="color: var(--text-muted);">Loading complaints...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="response-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 class="modal-title">Respond to Complaint</h4>
+        <button class="modal-close" onclick="closeResponseModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="resp-complaint-id">
+        <div class="form-group">
+          <label class="form-label">Student Description</label>
+          <div id="resp-student-desc" style="padding: 10px 12px; background: var(--glass-subtle); border-radius: 8px; font-size: 13px; border: 1px solid var(--border-color); color: var(--text-secondary);"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="resp-status">Status *</label>
+          <select id="resp-status" class="form-select">
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="open">Open</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="resp-text">Official Action / Response *</label>
+          <textarea id="resp-text" class="form-textarea" placeholder="Detail action taken (e.g. food replaced, kitchen inspected)..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeResponseModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="save-resp-btn" onclick="saveComplaintResponse()">Send Response</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      loadComplaints();
+    });
+
+    function clearFilters() {
+      document.getElementById('filter-status').value = '';
+      document.getElementById('filter-date').value = '';
+      loadComplaints();
+    }
+
+    async function loadComplaints() {
+      const container = document.getElementById('complaints-container');
+      container.innerHTML = '<p style="color: var(--text-muted);">Loading complaints...</p>';
+
+      const status = document.getElementById('filter-status').value;
+      const date = document.getElementById('filter-date').value;
+
+      let url = '/api/admin/complaints?';
+      if (status) url += `status=${encodeURIComponent(status)}&`;
+      if (date) url += `date=${encodeURIComponent(date)}&`;
+
+      try {
+        const data = await api(url);
+        const list = data.complaints || [];
+        document.getElementById('complaints-count').textContent = list.length;
+
+        if (list.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">${getIconSvg('inbox')}</div>
+              <div class="empty-state-title">No complaints match filters</div>
+              <p class="empty-state-desc">Try clearing filters or refreshing the list.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = '';
+        list.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.margin = '0';
+          card.style.background = 'var(--glass-subtle)';
+
+          const studentLabel = c.is_anonymous
+            ? '<span class="badge badge-used">Anonymous</span>'
+            : `<strong style="color: var(--text-main);">${escapeHtml(c.student_name)}</strong> <span style="color: var(--text-muted); font-size: 12.5px;">(${escapeHtml(c.roll_no)} &middot; ${escapeHtml(c.hostel || '')} ${escapeHtml(c.room_no || '')})</span>`;
+
+          card.innerHTML = `
+            <div class="flex justify-between items-center mb-3" style="flex-wrap: wrap; gap: 8px;">
+              <div>
+                ${studentLabel}
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                  <span style="text-transform: capitalize; font-weight: 600;">${escapeHtml(c.meal_type)}</span>
+                  &middot; ${formatDate(c.meal_date)}
+                  &middot; <span style="text-transform: capitalize;">${escapeHtml((c.category || '').replace('_', ' '))}</span>
+                </div>
+              </div>
+              <span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span>
+            </div>
+
+            <div style="background: var(--glass-bg-strong); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px;">
+              ${escapeHtml(c.description)}
+            </div>
+
+            <div class="flex justify-between items-center" style="font-size: 12.5px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                ${c.response ? `<strong>Response:</strong> ${escapeHtml(c.response)} <span style="color:var(--text-muted);">(${escapeHtml(c.responded_by_name || 'Admin')})</span>` : '<span style="color: var(--text-muted);">No response recorded yet.</span>'}
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="openResponseModal(${c.id}, '${escapeHtml(c.description).replace(/'/g, "\\'")}', '${c.status}', '${escapeHtml(c.response || '').replace(/'/g, "\\'")}')">
+                Reply & Update
+              </button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        container.innerHTML = `<p style="color: var(--danger);">Failed to load complaints: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    function openResponseModal(id, desc, currentStatus, currentResp) {
+      document.getElementById('resp-complaint-id').value = id;
+      document.getElementById('resp-student-desc').textContent = desc;
+      document.getElementById('resp-status').value = currentStatus || 'in_progress';
+      document.getElementById('resp-text').value = currentResp || '';
+      document.getElementById('response-modal').classList.add('active');
+    }
+
+    function closeResponseModal() {
+      document.getElementById('response-modal').classList.remove('active');
+    }
+
+    async function saveComplaintResponse() {
+      const id = document.getElementById('resp-complaint-id').value;
+      const status = document.getElementById('resp-status').value;
+      const response = document.getElementById('resp-text').value.trim();
+      const saveBtn = document.getElementById('save-resp-btn');
+
+      if (!response) {
+        showToast('Please enter a response.', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await api(`/api/admin/complaints/${id}`, {
+          method: 'PUT',
+          body: { response, status }
+        });
+
+        showToast(res.message, 'success');
+        closeResponseModal();
+        loadComplaints();
+      } catch (err) {
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Send Response';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link active">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Dashboard</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/student/buy-coupon.html" class="btn btn-primary btn-sm">+ Buy Coupons</a>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <!-- Glass Welcome Hero -->
+        <div class="hero-card hero-card-accent">
+          <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 16px;">
+            <div>
+              <div class="handwritten" style="font-size: 22px; color: var(--primary); line-height: 1.1;">Good to see you,</div>
+              <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.025em; color: var(--text-main);" id="welcome-name">Student</h2>
+              <div class="meta-pills">
+                <span class="meta-pill">Roll: <strong id="welcome-roll">-</strong></span>
+                <span class="meta-pill">Hostel: <strong id="welcome-hostel">-</strong></span>
+                <span class="meta-pill">Room: <strong id="welcome-room">-</strong></span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a href="/student/buy-coupon.html" class="btn btn-primary">Buy Coupons</a>
+              <a href="/student/mess-leave.html" class="btn btn-secondary">Apply Leave</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mess Notice Board (Handwritten Sticky Notes) -->
+        <div class="handwritten-note mb-4" id="notice-board-card">
+          <div class="flex justify-between items-center mb-2">
+            <div class="flex items-center gap-2">
+              <span data-icon="bell" style="color: var(--warning); display: inline-flex;"></span>
+              <span class="handwritten" style="font-size: 21px; color: var(--text-main);">Mess Notice Board</span>
+            </div>
+            <span style="font-size: 11.5px; color: var(--text-muted);" id="notice-count">Latest updates</span>
+          </div>
+          <div id="announcements-list" class="flex flex-col gap-2">
+            <p style="font-size: 13px; color: var(--text-muted);">Loading announcements...</p>
+          </div>
+        </div>
+
+        <!-- Today's Meals, Coupon Status & Ratings -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="card-title">Today's Kitchen Board</h3>
+                <span class="handwritten" style="font-size: 19px; color: var(--primary);">Chef's Special</span>
+              </div>
+              <p class="card-subtitle"><span id="today-date-text">Today</span> &middot; Tap stars to rate today's meals</p>
+            </div>
+            <span class="badge badge-active" id="today-day-text">Day</span>
+          </div>
+
+          <div class="grid-4" id="meals-status-container">
+            <div class="meal-status-card" data-meal="breakfast">
+              <div>
+                <div class="meal-card-head">
+                  <span class="meal-card-name">Breakfast</span>
+                  <span class="meal-card-time">07:30–09:00</span>
+                </div>
+                <div class="mt-2" id="diet-tag-breakfast"></div>
+                <p class="meal-card-items mt-2" id="menu-items-breakfast">-</p>
+              </div>
+              <div>
+                <div id="coupon-status-breakfast"><span class="badge badge-pending">Checking</span></div>
+                <div class="rating-strip mt-3">
+                  <span class="star-row" id="stars-breakfast"></span>
+                  <span class="tabular-nums" id="avg-rating-breakfast">Rate</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="meal-status-card" data-meal="lunch">
+              <div>
+                <div class="meal-card-head">
+                  <span class="meal-card-name">Lunch</span>
+                  <span class="meal-card-time">12:00–14:00</span>
+                </div>
+                <div class="mt-2" id="diet-tag-lunch"></div>
+                <p class="meal-card-items mt-2" id="menu-items-lunch">-</p>
+              </div>
+              <div>
+                <div id="coupon-status-lunch"><span class="badge badge-pending">Checking</span></div>
+                <div class="rating-strip mt-3">
+                  <span class="star-row" id="stars-lunch"></span>
+                  <span class="tabular-nums" id="avg-rating-lunch">Rate</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="meal-status-card" data-meal="snacks">
+              <div>
+                <div class="meal-card-head">
+                  <span class="meal-card-name">Snacks</span>
+                  <span class="meal-card-time">16:00–17:00</span>
+                </div>
+                <div class="mt-2" id="diet-tag-snacks"></div>
+                <p class="meal-card-items mt-2" id="menu-items-snacks">-</p>
+              </div>
+              <div>
+                <div id="coupon-status-snacks"><span class="badge badge-pending">Checking</span></div>
+                <div class="rating-strip mt-3">
+                  <span class="star-row" id="stars-snacks"></span>
+                  <span class="tabular-nums" id="avg-rating-snacks">Rate</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="meal-status-card" data-meal="dinner">
+              <div>
+                <div class="meal-card-head">
+                  <span class="meal-card-name">Dinner</span>
+                  <span class="meal-card-time">19:30–21:00</span>
+                </div>
+                <div class="mt-2" id="diet-tag-dinner"></div>
+                <p class="meal-card-items mt-2" id="menu-items-dinner">-</p>
+              </div>
+              <div>
+                <div id="coupon-status-dinner"><span class="badge badge-pending">Checking</span></div>
+                <div class="rating-strip mt-3">
+                  <span class="star-row" id="stars-dinner"></span>
+                  <span class="tabular-nums" id="avg-rating-dinner">Rate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Grid -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Coupons</h3>
+              <a href="/student/my-coupons.html" class="btn btn-secondary btn-sm">View all</a>
+            </div>
+            <div id="recent-coupons-list" class="flex flex-col gap-2">
+              <p style="color: var(--text-muted); font-size: 13px;">Loading coupons...</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Quick Actions</h3>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex justify-between items-center" style="padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--glass-subtle); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Meal Feedback & Grievances</div>
+                  <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+                    Report food quality or hygiene issues during serving hours (anonymously if preferred).
+                  </p>
+                </div>
+                <a href="/student/complaints.html" class="btn btn-secondary btn-sm">Raise Issue</a>
+              </div>
+
+              <div class="flex justify-between items-center" style="padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--glass-subtle); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Going Off-Campus?</div>
+                  <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+                    Apply for mess leave in advance to pause active meal coupons.
+                  </p>
+                </div>
+                <a href="/student/mess-leave.html" class="btn btn-secondary btn-sm">Apply Leave</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let currentUser = null;
+    const mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+    async function initDashboard() {
+      currentUser = await checkAuth(['student']);
+      if (!currentUser) return;
+
+      document.getElementById('welcome-name').textContent = currentUser.name;
+      document.getElementById('welcome-hostel').textContent = currentUser.hostel;
+      document.getElementById('welcome-room').textContent = currentUser.room_no || 'N/A';
+      document.getElementById('welcome-roll').textContent = currentUser.roll_no;
+
+      const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      document.getElementById('today-date-text').textContent = formatDate(todayStr);
+
+      await Promise.all([
+        loadAnnouncements(),
+        loadTodayMenu(),
+        loadTodayCoupons(todayStr),
+        loadTodayRatings(),
+        loadRecentCoupons()
+      ]);
+    }
+
+    async function loadAnnouncements() {
+      const listEl = document.getElementById('announcements-list');
+      try {
+        const data = await api('/api/student/announcements');
+        const items = data.announcements || [];
+        document.getElementById('notice-count').textContent = `${items.length} active notice${items.length === 1 ? '' : 's'}`;
+
+        if (items.length === 0) {
+          listEl.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">No announcements right now.</p>';
+          return;
+        }
+
+        listEl.innerHTML = '';
+        items.slice(0, 3).forEach(a => {
+          const row = document.createElement('div');
+          row.style.cssText = 'padding: 8px 12px; border-radius: 8px; background: var(--glass-bg-strong); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;';
+          row.innerHTML = `
+            <div>
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-main);">
+                ${escapeHtml(a.title)}
+                ${a.priority === 'important' ? '<span class="badge badge-rejected" style="margin-left: 6px; padding: 2px 7px; font-size: 10.5px;">Important</span>' : ''}
+              </div>
+              <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(a.message)}</div>
+            </div>
+            <span class="nowrap tabular-nums" style="font-size: 11px; color: var(--text-muted);">${formatDate(a.created_at)}</span>
+          `;
+          listEl.appendChild(row);
+        });
+      } catch (err) {
+        listEl.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Could not load announcements.</p>';
+      }
+    }
+
+    async function loadTodayMenu() {
+      try {
+        const data = await api('/api/student/menu/today');
+        document.getElementById('today-day-text').textContent = data.day;
+        data.menu.forEach(item => {
+          const el = document.getElementById(`menu-items-${item.meal_type}`);
+          const dietEl = document.getElementById(`diet-tag-${item.meal_type}`);
+          if (el) el.textContent = item.items;
+          if (dietEl) dietEl.innerHTML = getDietBadgeHtml(item.items);
+        });
+      } catch (err) {
+        console.error('Menu load error:', err);
+      }
+    }
+
+    async function loadTodayCoupons(todayStr) {
+      try {
+        const data = await api(`/api/student/coupons?date=${todayStr}`);
+        const couponsMap = {};
+        data.coupons.forEach(c => { couponsMap[c.meal_type] = c; });
+
+        mealTypes.forEach(m => {
+          const statusEl = document.getElementById(`coupon-status-${m}`);
+          const coupon = couponsMap[m];
+
+          if (coupon) {
+            if (coupon.status === 'active') statusEl.innerHTML = '<span class="badge badge-active">Active Coupon</span>';
+            else if (coupon.status === 'used') statusEl.innerHTML = '<span class="badge badge-used">Claimed</span>';
+            else if (coupon.status === 'skipped') statusEl.innerHTML = '<span class="badge badge-skipped">Skipped</span>';
+            else if (coupon.status === 'on_leave') statusEl.innerHTML = '<span class="badge badge-on_leave">On Leave</span>';
+            else statusEl.innerHTML = `<span class="badge badge-rejected">${escapeHtml(coupon.status)}</span>`;
+          } else {
+            statusEl.innerHTML = '<span class="badge badge-rejected">No Coupon</span>';
+          }
+        });
+      } catch (err) {
+        console.error('Today coupons load error:', err);
+      }
+    }
+
+    async function loadTodayRatings() {
+      try {
+        const data = await api('/api/student/ratings/today');
+        const myMap = {};
+        const avgMap = {};
+        (data.mine || []).forEach(r => { myMap[r.meal_type] = r.rating; });
+        (data.averages || []).forEach(a => { avgMap[a.meal_type] = a; });
+
+        mealTypes.forEach(m => {
+          renderStarsForMeal(m, myMap[m] || 0);
+          const avgEl = document.getElementById(`avg-rating-${m}`);
+          const info = avgMap[m];
+          if (avgEl) {
+            avgEl.textContent = info ? `${info.avg_rating}/5 (${info.total_votes})` : 'Rate meal';
+          }
+        });
+      } catch (err) {
+        mealTypes.forEach(m => renderStarsForMeal(m, 0));
+      }
+    }
+
+    function renderStarsForMeal(mealType, activeRating) {
+      const container = document.getElementById(`stars-${mealType}`);
+      if (!container) return;
+      container.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `star-btn ${i <= activeRating ? 'filled' : ''}`;
+        btn.title = `Rate ${mealType} ${i}/5`;
+        btn.innerHTML = getIconSvg('star');
+        btn.onclick = () => submitMealRating(mealType, i);
+        container.appendChild(btn);
+      }
+    }
+
+    async function submitMealRating(mealType, rating) {
+      try {
+        const res = await api('/api/student/ratings', {
+          method: 'POST',
+          body: { meal_type: mealType, rating }
+        });
+        showToast(res.message, 'success');
+        loadTodayRatings();
+      } catch (err) {}
+    }
+
+    async function loadRecentCoupons() {
+      try {
+        const data = await api('/api/student/coupons');
+        const listEl = document.getElementById('recent-coupons-list');
+        listEl.innerHTML = '';
+
+        if (!data.coupons || data.coupons.length === 0) {
+          listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No coupons found. Purchase coupons to get started.</p>';
+          return;
+        }
+
+        data.coupons.slice(0, 4).forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'coupon-card';
+          div.innerHTML = `
+            <div>
+              <div class="coupon-date tabular-nums">${formatDate(c.meal_date)}</div>
+              <div class="coupon-meal">${escapeHtml(c.meal_type)} &middot; ${escapeHtml(c.source)}</div>
+            </div>
+            <div>
+              <span class="badge badge-${c.status}">${escapeHtml(c.status)}</span>
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+      } catch (err) {
+        console.error('Recent coupons load error:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

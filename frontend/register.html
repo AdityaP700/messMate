@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Registration - IIIT Bhubaneswar Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 480px;">
+      <div class="auth-header">
+        <div class="auth-logo" data-icon="brand"></div>
+        <h1 class="auth-title">Create Student Account</h1>
+        <p class="auth-subtitle">Register with your IIIT Bhubaneswar roll number</p>
+        <p class="handwritten" style="font-size: 19px; color: var(--primary); margin-top: 4px;">Your digital mess card in 30 seconds.</p>
+      </div>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name *</label>
+          <input type="text" id="name" class="form-input" placeholder="e.g. Aditya Pattanayak" required>
+        </div>
+
+        <div class="grid-2" style="gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="roll_no">Roll Number *</label>
+            <input type="text" id="roll_no" class="form-input" placeholder="e.g. B121001" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Institute Email *</label>
+            <input type="email" id="email" class="form-input" placeholder="e.g. b121001@iiit-bh.ac.in" required>
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="hostel">Hostel *</label>
+            <select id="hostel" class="form-select" required>
+              <option value="">Select Hostel</option>
+              <option value="BH1">Boys Hostel 1 (BH1)</option>
+              <option value="BH2">Boys Hostel 2 (BH2)</option>
+              <option value="BH3">Boys Hostel 3 (BH3)</option>
+              <option value="GH1">Girls Hostel 1 (GH1)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="room_no">Room Number</label>
+            <input type="text" id="room_no" class="form-input" placeholder="e.g. 204">
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="password">Password *</label>
+            <input type="password" id="password" class="form-input" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirm_password">Confirm Password *</label>
+            <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required minlength="6">
+          </div>
+        </div>
+
+        <button type="submit" id="reg-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 10px 16px;">
+          Create Account
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+        Already registered? <a href="/index.html" style="font-weight: 600;">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const form = document.getElementById('register-form');
+    const regBtn = document.getElementById('reg-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const roll_no = document.getElementById('roll_no').value.trim().toUpperCase();
+      const email = document.getElementById('email').value.trim();
+      const hostel = document.getElementById('hostel').value;
+      const room_no = document.getElementById('room_no').value.trim();
+      const password = document.getElementById('password').value;
+      const confirm_password = document.getElementById('confirm_password').value;
+
+      if (!name || !roll_no || !email || !hostel || !password) {
+        showToast('Please fill in all required fields.', 'error');
+        return;
+      }
+
+      if (password !== confirm_password) {
+        showToast('Passwords do not match.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Password must be at least 6 characters long.', 'error');
+        return;
+      }
+
+      regBtn.disabled = true;
+      regBtn.textContent = 'Creating account...';
+
+      try {
+        await api('/api/auth/register', {
+          method: 'POST',
+          body: { name, roll_no, email, hostel, room_no, password }
+        });
+
+        showToast('Account created. Welcome to IIIT Mess.', 'success');
+        setTimeout(() => {
+          window.location.href = '/student/dashboard.html';
+        }, 500);
+      } catch (err) {
+        regBtn.disabled = false;
+        regBtn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

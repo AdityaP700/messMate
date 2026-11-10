@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Payments - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link active">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Verify Payments</h2>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadPendingPayments()">Refresh</button>
+      </header>
+
+      <main class="page-body">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Pending Payment Submissions</h3>
+              <p class="card-subtitle">
+                Verifying a payment automatically generates active meal coupons for the student.
+              </p>
+            </div>
+            <span class="badge badge-pending" id="pending-count-badge">0 Pending</span>
+          </div>
+
+          <div id="payments-queue-container" class="flex flex-col gap-3">
+            <p style="color: var(--text-muted);">Loading pending payments...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="image-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 class="modal-title">Payment Screenshot</h4>
+        <button class="modal-close" onclick="closeImageModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <img id="modal-img-preview" src="" alt="Payment Receipt" style="max-width: 100%; border-radius: 8px;">
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      loadPendingPayments();
+    });
+
+    async function loadPendingPayments() {
+      const container = document.getElementById('payments-queue-container');
+      container.innerHTML = '<p style="color: var(--text-muted);">Loading pending payments...</p>';
+
+      try {
+        const data = await api('/api/admin/payments/pending');
+        const payments = data.payments || [];
+        document.getElementById('pending-count-badge').textContent = `${payments.length} Pending`;
+
+        if (payments.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">${getIconSvg('check')}</div>
+              <div class="empty-state-title">All caught up</div>
+              <p class="empty-state-desc">There are no pending student payments waiting for verification.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = '';
+        payments.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.margin = '0';
+          card.style.background = 'var(--glass-subtle)';
+
+          const hasScreenshot = Boolean(p.screenshot_path);
+          const screenshotHtml = hasScreenshot ? `
+            <div style="cursor: pointer;" onclick="viewScreenshot('${escapeHtml(p.screenshot_path)}')">
+              <img src="${escapeHtml(p.screenshot_path)}" alt="Receipt" style="width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);" title="View full receipt">
+              <div style="font-size: 11px; text-align: center; color: var(--primary); margin-top: 4px; font-weight: 500;">View full</div>
+            </div>
+          ` : `
+            <div style="width: 72px; height: 72px; background: var(--glass-bg-strong); border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); text-align: center; padding: 6px;">
+              Cash
+            </div>
+          `;
+
+          card.innerHTML = `
+            <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 16px;">
+              <div class="flex gap-3 items-center">
+                ${screenshotHtml}
+                <div>
+                  <div style="font-size: 14.5px; font-weight: 600; color: var(--text-main);">
+                    ${escapeHtml(p.student_name)} <span style="font-size: 12.5px; font-weight: 500; color: var(--text-muted);">(${escapeHtml(p.roll_no)})</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+                    ${escapeHtml(p.hostel || '-')} &middot; Room ${escapeHtml(p.room_no || '-')}
+                  </div>
+                  <div class="tabular-nums" style="font-size: 13px; margin-top: 5px; color: var(--text-secondary);">
+                    <strong style="color: var(--accent); font-size: 14.5px;">${formatCurrency(p.amount)}</strong>
+                    &middot; <span style="text-transform: uppercase; font-weight: 600; font-size: 11.5px;">${escapeHtml(p.method)}</span>
+                    &middot; ${formatDate(p.created_at)}
+                  </div>
+                  <div class="tabular-nums" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    Order: ${formatDate(p.start_date)} to ${formatDate(p.end_date)}
+                  </div>
+                </div>
+              </div>
+
+              <div style="min-width: 240px;">
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <input type="text" id="notes-${p.id}" class="form-input" placeholder="Verification notes (optional)" style="font-size: 12.5px; padding: 7px 10px;">
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn btn-sm btn-success" style="flex: 1;" onclick="processPayment(${p.id}, 'verify')">Verify & Issue</button>
+                  <button class="btn btn-sm btn-danger" style="flex: 1;" onclick="processPayment(${p.id}, 'reject')">Reject</button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      } catch (err) {
+        container.innerHTML = `<p style="color: var(--danger);">Failed to load pending payments: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    async function processPayment(paymentId, action) {
+      const notesInput = document.getElementById(`notes-${paymentId}`);
+      const notes = notesInput ? notesInput.value.trim() : '';
+
+      if (action === 'reject' && !confirm('Reject this payment submission?')) return;
+
+      try {
+        const res = await api(`/api/admin/payments/${paymentId}/verify`, {
+          method: 'PUT',
+          body: { action, notes }
+        });
+
+        showToast(res.message, 'success');
+        loadPendingPayments();
+      } catch (err) {}
+    }
+
+    function viewScreenshot(src) {
+      document.getElementById('modal-img-preview').src = src;
+      document.getElementById('image-modal').classList.add('active');
+    }
+
+    function closeImageModal() {
+      document.getElementById('image-modal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

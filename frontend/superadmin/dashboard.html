@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Super Admin</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/superadmin/dashboard.html" class="nav-link active">
+          <span class="nav-icon" data-icon="dashboard"></span> Overview
+        </a>
+        <a href="/superadmin/daily-reports.html" class="nav-link">
+          <span class="nav-icon" data-icon="report"></span> Daily Reports
+        </a>
+        <a href="/superadmin/manage-admins.html" class="nav-link">
+          <span class="nav-icon" data-icon="shield"></span> Manage Admins
+        </a>
+        <a href="/superadmin/settings.html" class="nav-link">
+          <span class="nav-icon" data-icon="settings"></span> Mess Settings
+        </a>
+        <div class="nav-section-label">Workspace</div>
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="switch"></span> Admin View
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">SA</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Super Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Executive Overview</h2>
+        </div>
+        <a href="/superadmin/settings.html" class="btn btn-primary btn-sm">Mess Settings</a>
+      </header>
+
+      <main class="page-body">
+        <div class="grid-4 mb-4">
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-students">0</div>
+              <div class="stat-label">Enrolled Students</div>
+            </div>
+            <div class="stat-icon" data-icon="users"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-revenue" style="color: var(--accent);">₹0.00</div>
+              <div class="stat-label">Month's Revenue</div>
+            </div>
+            <div class="stat-icon" style="background: var(--accent-light); color: var(--accent);" data-icon="wallet"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-coupons-sold" style="color: var(--primary);">0</div>
+              <div class="stat-label">Coupons Sold</div>
+            </div>
+            <div class="stat-icon" data-icon="ticket"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-avg-attendance" style="color: #7c3aed;">0</div>
+              <div class="stat-label">Avg Daily Diners</div>
+            </div>
+            <div class="stat-icon" style="background: #f3e8ff; color: #7c3aed;" data-icon="utensils"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Complaints Summary</h3>
+              <a href="/admin/complaints.html" class="btn btn-secondary btn-sm">Manage All</a>
+            </div>
+
+            <div class="flex justify-between items-center" style="padding: 18px 0;">
+              <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--text-main);" id="comp-total">0</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Total Lodged</div>
+              </div>
+              <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
+              <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--danger);" id="comp-open">0</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Open</div>
+              </div>
+              <div style="width: 1px; height: 42px; background: var(--border-color);"></div>
+              <div style="text-align: center; flex: 1;">
+                <div class="tabular-nums" style="font-size: 28px; font-weight: 700; color: var(--accent);" id="comp-resolved">0</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Resolved</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Executive Controls</h3>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Tariff & Cutoff Policy</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Adjust meal pricing and skip cutoff minutes</div>
+                </div>
+                <a href="/superadmin/settings.html" class="btn btn-primary btn-sm">Configure</a>
+              </div>
+
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Administration Staff</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Provision or deactivate mess manager accounts</div>
+                </div>
+                <a href="/superadmin/manage-admins.html" class="btn btn-secondary btn-sm">Manage</a>
+              </div>
+
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Daily Audit Reports</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Inspect meal counts and revenue reconciliations</div>
+                </div>
+                <a href="/superadmin/daily-reports.html" class="btn btn-secondary btn-sm">View Reports</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['superadmin']);
+      loadSuperadminStats();
+    });
+
+    async function loadSuperadminStats() {
+      try {
+        const data = await api('/api/superadmin/stats/overview');
+        document.getElementById('stat-students').textContent = data.total_students;
+        document.getElementById('stat-revenue').textContent = formatCurrency(data.this_month_revenue);
+        document.getElementById('stat-coupons-sold').textContent = data.total_coupons_sold;
+        document.getElementById('stat-avg-attendance').textContent = data.avg_daily_attendance;
+
+        const c = data.complaints || {};
+        document.getElementById('comp-total').textContent = c.total_complaints || 0;
+        document.getElementById('comp-open').textContent = c.open_complaints || 0;
+        document.getElementById('comp-resolved').textContent = c.resolved_complaints || 0;
+      } catch (err) {
+        console.error('Superadmin stats load error:', err);
+      }
+    }
+  </script>
+</body>
+</html>

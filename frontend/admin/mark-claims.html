@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Claims Counter - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link active">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Meal Claims Counter</h2>
+        </div>
+        <a href="/admin/spot-coupon.html" class="btn btn-primary btn-sm">+ Spot Coupon</a>
+      </header>
+
+      <main class="page-body">
+        <div class="hero-card hero-card-accent">
+          <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 16px;">
+            <div>
+              <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary);">Active Meal Window</div>
+              <h2 style="font-size: 22px; font-weight: 700; text-transform: capitalize; color: var(--text-main);" id="current-meal-title">Loading...</h2>
+              <p class="tabular-nums" style="font-size: 13px; color: var(--text-muted); margin-top: 2px;" id="current-meal-schedule">Serving Time: -</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="select-meal-counter" class="form-label" style="margin: 0;">Meal:</label>
+              <select id="select-meal-counter" class="form-select" style="width: auto;" onchange="loadClaims()">
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="snacks">Snacks</option>
+                <option value="dinner">Dinner</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 14px 18px;">
+          <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+            <div class="search-input-wrap" style="flex: 1; min-width: 240px;">
+              <span class="search-input-icon" data-icon="search"></span>
+              <input
+                type="text"
+                id="search-roll"
+                class="form-input"
+                placeholder="Filter by roll number or student name..."
+                oninput="filterClaimsList()"
+              >
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadClaims()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card card-flush">
+          <div class="card-header">
+            <h3 class="card-title">Eligible Coupons (<span id="eligible-count">0</span>)</h3>
+            <span class="badge badge-active">Ready for Entry</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Roll Number</th>
+                  <th>Student Name</th>
+                  <th>Hostel</th>
+                  <th>Room</th>
+                  <th>Meal</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="claims-table-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading active coupons...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let allClaims = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      await loadClaims();
+    });
+
+    async function loadClaims() {
+      const mealSelect = document.getElementById('select-meal-counter');
+      const mealType = mealSelect.value;
+      const tbody = document.getElementById('claims-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading active coupons...</td></tr>';
+
+      try {
+        const data = await api(`/api/admin/claims/today?meal_type=${encodeURIComponent(mealType)}`);
+        document.getElementById('current-meal-title').textContent = data.meal_type;
+        document.getElementById('current-meal-schedule').textContent = `Serving Time: ${data.schedule.start} – ${data.schedule.end} IST`;
+
+        if (!mealSelect.hasAttribute('data-initialized')) {
+          mealSelect.value = data.meal_type;
+          mealSelect.setAttribute('data-initialized', 'true');
+        }
+
+        allClaims = data.claims || [];
+        renderClaims(allClaims);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger);">Failed to load claims: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function renderClaims(claims) {
+      const tbody = document.getElementById('claims-table-body');
+      document.getElementById('eligible-count').textContent = claims.length;
+
+      if (claims.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">No active coupons found for this meal.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      claims.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.id = `row-coupon-${c.coupon_id}`;
+        tr.innerHTML = `
+          <td class="nowrap"><strong style="color: var(--primary);">${escapeHtml(c.roll_no)}</strong></td>
+          <td>${escapeHtml(c.student_name)}</td>
+          <td class="nowrap">${escapeHtml(c.hostel || '-')}</td>
+          <td class="nowrap">${escapeHtml(c.room_no || '-')}</td>
+          <td class="nowrap" style="text-transform: capitalize;">${escapeHtml(c.meal_type)}</td>
+          <td class="nowrap">
+            <button class="btn btn-sm btn-success" onclick="markClaimed(${c.coupon_id}, '${escapeHtml(c.roll_no)}')">Mark Claimed</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterClaimsList() {
+      const q = document.getElementById('search-roll').value.trim().toLowerCase();
+      if (!q) {
+        renderClaims(allClaims);
+        return;
+      }
+
+      const filtered = allClaims.filter(c =>
+        (c.roll_no && c.roll_no.toLowerCase().includes(q)) ||
+        (c.student_name && c.student_name.toLowerCase().includes(q))
+      );
+      renderClaims(filtered);
+    }
+
+    async function markClaimed(couponId, rollNo) {
+      try {
+        await api(`/api/admin/claims/${couponId}`, { method: 'POST' });
+        showToast(`Meal claimed for ${rollNo}.`, 'success');
+        allClaims = allClaims.filter(c => c.coupon_id !== couponId);
+        filterClaimsList();
+      } catch (err) {}
+    }
+  </script>
+</body>
+</html>

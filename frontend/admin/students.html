@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Directory - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link active">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Student Directory</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card" style="padding: 14px 18px;">
+          <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+            <div class="search-input-wrap" style="flex: 1; min-width: 240px;">
+              <span class="search-input-icon" data-icon="search"></span>
+              <input
+                type="text"
+                id="search-input"
+                class="form-input"
+                placeholder="Search by roll number, name, or hostel..."
+                oninput="debounceSearch()"
+              >
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadStudents()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card card-flush">
+          <div class="card-header">
+            <h3 class="card-title">Enrolled Students (<span id="students-count">0</span>)</h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Roll Number</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Hostel</th>
+                  <th>Room</th>
+                  <th>Active Coupons</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading students...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let searchTimeout = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      loadStudents();
+    });
+
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadStudents, 300);
+    }
+
+    async function loadStudents() {
+      const q = document.getElementById('search-input').value.trim();
+      const tbody = document.getElementById('students-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading students...</td></tr>';
+
+      let url = '/api/admin/students';
+      if (q) url += `?search=${encodeURIComponent(q)}`;
+
+      try {
+        const data = await api(url);
+        const list = data.students || [];
+        document.getElementById('students-count').textContent = list.length;
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 28px;">No students found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach(s => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="nowrap"><strong style="color: var(--primary);">${escapeHtml(s.roll_no)}</strong></td>
+            <td><strong style="color: var(--text-main);">${escapeHtml(s.name)}</strong></td>
+            <td>${escapeHtml(s.email)}</td>
+            <td class="nowrap">${escapeHtml(s.hostel || '-')}</td>
+            <td class="nowrap">${escapeHtml(s.room_no || '-')}</td>
+            <td class="nowrap">
+              <span class="badge ${s.active_coupons_count > 0 ? 'badge-active' : 'badge-used'}">
+                ${s.active_coupons_count} active
+              </span>
+            </td>
+            <td class="nowrap">
+              <span class="badge ${s.is_active ? 'badge-active' : 'badge-rejected'}">
+                ${s.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger);">Failed to load students: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

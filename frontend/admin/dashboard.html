@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link active">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Mess Administration</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/admin/spot-coupon.html" class="btn btn-primary btn-sm">+ Spot Coupon</a>
+          <a href="/admin/mark-claims.html" class="btn btn-secondary btn-sm">Scan Claims</a>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="grid-4 mb-4">
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-students">0</div>
+              <div class="stat-label">Active Students</div>
+            </div>
+            <div class="stat-icon" data-icon="users"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-pending-payments" style="color: var(--warning);">0</div>
+              <div class="stat-label">Pending Payments</div>
+            </div>
+            <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);" data-icon="payment"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-open-complaints" style="color: var(--danger);">0</div>
+              <div class="stat-label">Open Complaints</div>
+            </div>
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);" data-icon="alert"></div>
+          </div>
+
+          <div class="stat-card">
+            <div>
+              <div class="stat-value" id="stat-skips" style="color: var(--primary);">0</div>
+              <div class="stat-label">Today's Skips</div>
+            </div>
+            <div class="stat-icon" data-icon="clock"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Meals Served Today</h3>
+                <p class="card-subtitle" id="stats-date">Today</p>
+              </div>
+              <a href="/admin/mark-claims.html" class="btn btn-secondary btn-sm">Claim Counter</a>
+            </div>
+
+            <div class="bar-chart-container">
+              <div class="bar-row">
+                <span class="bar-label">Breakfast</span>
+                <div class="bar-track">
+                  <div class="bar-fill" id="bar-breakfast" style="width: 0%; background: #f29900;"></div>
+                </div>
+                <span class="bar-count" id="count-breakfast">0</span>
+              </div>
+
+              <div class="bar-row">
+                <span class="bar-label">Lunch</span>
+                <div class="bar-track">
+                  <div class="bar-fill" id="bar-lunch" style="width: 0%; background: #34a853;"></div>
+                </div>
+                <span class="bar-count" id="count-lunch">0</span>
+              </div>
+
+              <div class="bar-row">
+                <span class="bar-label">Snacks</span>
+                <div class="bar-track">
+                  <div class="bar-fill" id="bar-snacks" style="width: 0%; background: #1a73e8;"></div>
+                </div>
+                <span class="bar-count" id="count-snacks">0</span>
+              </div>
+
+              <div class="bar-row">
+                <span class="bar-label">Dinner</span>
+                <div class="bar-track">
+                  <div class="bar-fill" id="bar-dinner" style="width: 0%; background: #7c3aed;"></div>
+                </div>
+                <span class="bar-count" id="count-dinner">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Pending Operations</h3>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Payment Verification</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Review student payment receipts and issue coupons</div>
+                </div>
+                <a href="/admin/verify-payments.html" class="btn btn-primary btn-sm">Review</a>
+              </div>
+
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Leave Approvals</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Approve mess leave and pause active meal coupons</div>
+                </div>
+                <a href="/admin/leave-requests.html" class="btn btn-secondary btn-sm">Pending Leaves</a>
+              </div>
+
+              <div class="flex justify-between items-center" style="padding: 12px 14px; background: var(--glass-subtle); border-radius: 10px; border: 1px solid var(--border-color); gap: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px;">Student Complaints</div>
+                  <div style="font-size: 12.5px; color: var(--text-muted);">Respond to open food quality and hygiene tickets</div>
+                </div>
+                <a href="/admin/complaints.html" class="btn btn-secondary btn-sm">Resolve</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notice Board Publisher & Student Meal Ratings -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="card-title">Mess Notice Board</h3>
+                  <span class="handwritten" style="font-size: 18px; color: var(--primary);">Broadcast</span>
+                </div>
+                <p class="card-subtitle">Post announcements visible on all student dashboards</p>
+              </div>
+            </div>
+
+            <form id="announcement-form" class="mb-4">
+              <div class="grid-2" style="gap: 10px;">
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <input type="text" id="ann-title" class="form-input" placeholder="Notice title (e.g. Special Dinner)" required maxlength="120">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <select id="ann-priority" class="form-select">
+                    <option value="info">Standard Notice</option>
+                    <option value="important">Important Alert</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <textarea id="ann-message" class="form-textarea" style="min-height: 64px;" placeholder="Message for students..." required></textarea>
+              </div>
+              <button type="submit" id="ann-submit-btn" class="btn btn-primary btn-sm">Post Notice</button>
+            </form>
+
+            <div id="admin-announcements-list" class="flex flex-col gap-2">
+              <p style="font-size: 12.5px; color: var(--text-muted);">Loading notices...</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Today's Meal Satisfaction</h3>
+                <p class="card-subtitle">Live student 1–5 star ratings</p>
+              </div>
+              <span class="badge badge-active tabular-nums" id="overall-rating-badge">-- / 5</span>
+            </div>
+
+            <div id="ratings-summary-list" class="flex flex-col gap-3">
+              <p style="font-size: 12.5px; color: var(--text-muted);">Loading ratings...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      loadDashboardStats();
+      loadAdminAnnouncements();
+      loadRatingsSummary();
+    });
+
+    async function loadAdminAnnouncements() {
+      const listEl = document.getElementById('admin-announcements-list');
+      try {
+        const data = await api('/api/admin/announcements');
+        const list = data.announcements || [];
+        if (list.length === 0) {
+          listEl.innerHTML = '<p style="font-size: 12.5px; color: var(--text-muted);">No announcements posted.</p>';
+          return;
+        }
+        listEl.innerHTML = '';
+        list.slice(0, 5).forEach(a => {
+          const item = document.createElement('div');
+          item.className = `notice-item ${a.priority === 'important' ? 'important' : ''}`;
+          item.innerHTML = `
+            <div>
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-main);">${escapeHtml(a.title)}</div>
+              <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(a.message)}</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="deleteAnnouncement(${a.id})">Remove</button>
+          `;
+          listEl.appendChild(item);
+        });
+      } catch (err) {
+        listEl.innerHTML = '<p style="font-size: 12.5px; color: var(--danger);">Failed to load notices.</p>';
+      }
+    }
+
+    document.getElementById('announcement-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('ann-title').value.trim();
+      const message = document.getElementById('ann-message').value.trim();
+      const priority = document.getElementById('ann-priority').value;
+      const btn = document.getElementById('ann-submit-btn');
+
+      btn.disabled = true;
+      try {
+        const res = await api('/api/admin/announcements', {
+          method: 'POST',
+          body: { title, message, priority }
+        });
+        showToast(res.message, 'success');
+        document.getElementById('announcement-form').reset();
+        loadAdminAnnouncements();
+      } catch (err) {} finally {
+        btn.disabled = false;
+      }
+    });
+
+    async function deleteAnnouncement(id) {
+      try {
+        await api(`/api/admin/announcements/${id}`, { method: 'DELETE' });
+        showToast('Notice removed.', 'success');
+        loadAdminAnnouncements();
+      } catch (err) {}
+    }
+
+    async function loadRatingsSummary() {
+      const container = document.getElementById('ratings-summary-list');
+      const overallBadge = document.getElementById('overall-rating-badge');
+      try {
+        const data = await api('/api/admin/ratings/summary');
+        const ov = data.overall || {};
+        overallBadge.textContent = ov.avg_rating ? `${ov.avg_rating} / 5 (${ov.votes})` : 'No votes yet';
+
+        const map = {};
+        (data.today_by_meal || []).forEach(r => { map[r.meal_type] = r; });
+
+        container.innerHTML = '';
+        ['breakfast', 'lunch', 'snacks', 'dinner'].forEach(m => {
+          const entry = map[m];
+          const row = document.createElement('div');
+          row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 10px; background: var(--glass-subtle); border: 1px solid var(--border-color);';
+          row.innerHTML = `
+            <span style="text-transform: capitalize; font-weight: 600; font-size: 13.5px;">${m}</span>
+            <span class="tabular-nums" style="font-size: 13px; color: var(--text-secondary);">
+              ${entry ? `<strong style="color: #f59e0b;">${entry.avg_rating} / 5</strong> (${entry.votes} vote${entry.votes === 1 ? '' : 's'})` : '<span style="color: var(--text-muted);">No ratings today</span>'}
+            </span>
+          `;
+          container.appendChild(row);
+        });
+      } catch (err) {
+        container.innerHTML = '<p style="font-size: 12.5px; color: var(--danger);">Failed to load ratings.</p>';
+      }
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const data = await api('/api/admin/dashboard/stats');
+        document.getElementById('stats-date').textContent = formatDate(data.date);
+        document.getElementById('stat-students').textContent = data.total_students;
+        document.getElementById('stat-pending-payments').textContent = data.pending_payments;
+        document.getElementById('stat-open-complaints').textContent = data.open_complaints;
+        document.getElementById('stat-skips').textContent = data.total_skips;
+
+        const meals = data.meals_served || {};
+        const b = meals.breakfast || 0;
+        const l = meals.lunch || 0;
+        const s = meals.snacks || 0;
+        const d = meals.dinner || 0;
+
+        document.getElementById('count-breakfast').textContent = b;
+        document.getElementById('count-lunch').textContent = l;
+        document.getElementById('count-snacks').textContent = s;
+        document.getElementById('count-dinner').textContent = d;
+
+        const max = Math.max(b, l, s, d, 10);
+        document.getElementById('bar-breakfast').style.width = `${(b / max) * 100}%`;
+        document.getElementById('bar-lunch').style.width = `${(l / max) * 100}%`;
+        document.getElementById('bar-snacks').style.width = `${(s / max) * 100}%`;
+        document.getElementById('bar-dinner').style.width = `${(d / max) * 100}%`;
+      } catch (err) {
+        console.error('Stats load error:', err);
+      }
+    }
+  </script>
+</body>
+</html>

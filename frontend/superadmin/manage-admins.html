@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Administrators - IIIT Mess Super Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Super Admin</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/superadmin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Overview
+        </a>
+        <a href="/superadmin/daily-reports.html" class="nav-link">
+          <span class="nav-icon" data-icon="report"></span> Daily Reports
+        </a>
+        <a href="/superadmin/manage-admins.html" class="nav-link active">
+          <span class="nav-icon" data-icon="shield"></span> Manage Admins
+        </a>
+        <a href="/superadmin/settings.html" class="nav-link">
+          <span class="nav-icon" data-icon="settings"></span> Mess Settings
+        </a>
+        <div class="nav-section-label">Workspace</div>
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="switch"></span> Admin View
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">SA</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Super Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Manage Admins</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Create Admin User</h3>
+                <p class="card-subtitle">Provision a mess manager account</p>
+              </div>
+            </div>
+
+            <form id="create-admin-form">
+              <div class="form-group">
+                <label class="form-label" for="admin_name">Full Name *</label>
+                <input type="text" id="admin_name" class="form-input" placeholder="e.g. Ramesh Kumar" required>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="admin_roll_no">Staff ID *</label>
+                  <input type="text" id="admin_roll_no" class="form-input" placeholder="e.g. ADM002" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="admin_email">Email *</label>
+                  <input type="email" id="admin_email" class="form-input" placeholder="e.g. ramesh@iiitbbsr.ac.in" required>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="admin_hostel">Block / Office *</label>
+                  <input type="text" id="admin_hostel" class="form-input" placeholder="e.g. Mess Office" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="admin_room_no">Room / Desk</label>
+                  <input type="text" id="admin_room_no" class="form-input" placeholder="e.g. G-04">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="admin_password">Password (min 6 chars) *</label>
+                <input type="password" id="admin_password" class="form-input" placeholder="Min 6 characters" required minlength="6">
+              </div>
+
+              <button type="submit" id="create-admin-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                + Provision Admin Account
+              </button>
+            </form>
+          </div>
+
+          <div class="card card-flush">
+            <div class="card-header">
+              <h3 class="card-title">Admin Accounts</h3>
+              <button class="btn btn-secondary btn-sm" onclick="loadAdmins()">Refresh</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Staff ID</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admins-table-body">
+                  <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading admin accounts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await checkAuth(['superadmin']);
+      loadAdmins();
+    });
+
+    async function loadAdmins() {
+      const tbody = document.getElementById('admins-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading admin accounts...</td></tr>';
+
+      try {
+        const data = await api('/api/superadmin/admins');
+        const list = data.admins || [];
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 28px;">No staff admins configured.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach(a => {
+          const tr = document.createElement('tr');
+          const isMe = (currentUser && a.id === currentUser.id);
+
+          tr.innerHTML = `
+            <td><strong style="color: var(--text-main);">${escapeHtml(a.name)}</strong></td>
+            <td class="nowrap">${escapeHtml(a.roll_no)}</td>
+            <td>${escapeHtml(a.email)}</td>
+            <td class="nowrap">
+              <span class="badge ${a.is_active ? 'badge-active' : 'badge-rejected'}">
+                ${a.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+            <td class="nowrap">
+              ${a.is_active && !isMe ? `
+                <button class="btn btn-sm btn-danger" onclick="deactivateAdmin(${a.id}, '${escapeHtml(a.name)}')">Deactivate</button>
+              ` : (isMe ? '<span style="font-size: 12px; color: var(--text-muted);">Current</span>' : '-')}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger);">Failed to load admins: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    const form = document.getElementById('create-admin-form');
+    const createBtn = document.getElementById('create-admin-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('admin_name').value.trim();
+      const roll_no = document.getElementById('admin_roll_no').value.trim().toUpperCase();
+      const email = document.getElementById('admin_email').value.trim();
+      const hostel = document.getElementById('admin_hostel').value.trim();
+      const room_no = document.getElementById('admin_room_no').value.trim();
+      const password = document.getElementById('admin_password').value;
+
+      if (!name || !roll_no || !email || !hostel || !password) {
+        showToast('Please fill all required fields.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Password must be at least 6 characters.', 'error');
+        return;
+      }
+
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
+
+      try {
+        const res = await api('/api/superadmin/admins', {
+          method: 'POST',
+          body: { name, roll_no, email, hostel, room_no, password }
+        });
+
+        showToast(res.message, 'success');
+        form.reset();
+        loadAdmins();
+      } catch (err) {
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = '+ Provision Admin Account';
+      }
+    });
+
+    async function deactivateAdmin(id, name) {
+      if (!confirm(`Deactivate admin "${name}"? They will lose system access immediately.`)) return;
+
+      try {
+        const res = await api(`/api/superadmin/admins/${id}`, { method: 'DELETE' });
+        showToast(res.message, 'success');
+        loadAdmins();
+      } catch (err) {}
+    }
+  </script>
+</body>
+</html>

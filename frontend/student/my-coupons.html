@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Meal Coupons - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link active">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">My Meal Coupons</h2>
+        </div>
+        <a href="/student/buy-coupon.html" class="btn btn-primary btn-sm">+ Buy More</a>
+      </header>
+
+      <main class="page-body">
+        <div class="card" style="padding: 14px 18px;">
+          <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 12px;">
+            <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+              <div class="flex items-center gap-2">
+                <label for="filter-date" class="form-label" style="margin: 0;">Date</label>
+                <input type="date" id="filter-date" class="form-input" style="width: auto;">
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="filter-status" class="form-label" style="margin: 0;">Status</label>
+                <select id="filter-status" class="form-select" style="width: auto;">
+                  <option value="">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="used">Used</option>
+                  <option value="skipped">Skipped</option>
+                  <option value="on_leave">On Leave</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button id="apply-filters-btn" class="btn btn-primary btn-sm">Apply</button>
+              <button id="clear-filters-btn" class="btn btn-secondary btn-sm">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="coupons-container">
+          <p style="color: var(--text-muted);">Loading coupons...</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Digital Dining Pass Modal -->
+  <div class="modal-overlay" id="pass-modal">
+    <div class="modal-dialog" style="max-width: 390px;">
+      <div class="modal-header">
+        <h4 class="modal-title">Digital Dining Pass</h4>
+        <button class="modal-close" onclick="closePassModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);" id="pass-roll">-</div>
+        <h3 style="font-size: 20px; font-weight: 800; text-transform: capitalize; margin-top: 4px;" id="pass-meal">-</h3>
+        <p class="tabular-nums" style="font-size: 13px; color: var(--text-muted); margin-top: 2px;" id="pass-date">-</p>
+        <div id="pass-qr" style="margin: 18px auto; padding: 14px; background: #ffffff; border-radius: 12px; display: inline-block; border: 1px solid var(--border-color); color: #0f172a;"></div>
+        <div class="tabular-nums" style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="pass-code">#CPN-0000</div>
+        <div class="mt-3">
+          <span class="handwritten-stamp">Valid Entry &middot; IIIT Mess</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px;">
+          Show this pass at the mess hall counter to claim your meal.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await checkAuth(['student']);
+      loadCoupons();
+
+      document.getElementById('apply-filters-btn').addEventListener('click', loadCoupons);
+      document.getElementById('clear-filters-btn').addEventListener('click', () => {
+        document.getElementById('filter-date').value = '';
+        document.getElementById('filter-status').value = '';
+        loadCoupons();
+      });
+    });
+
+    async function loadCoupons() {
+      const container = document.getElementById('coupons-container');
+      container.innerHTML = '<p style="color: var(--text-muted);">Loading coupons...</p>';
+
+      const dateVal = document.getElementById('filter-date').value;
+      const statusVal = document.getElementById('filter-status').value;
+
+      let url = '/api/student/coupons?';
+      if (dateVal) url += `date=${encodeURIComponent(dateVal)}&`;
+      if (statusVal) url += `status=${encodeURIComponent(statusVal)}&`;
+
+      try {
+        const data = await api(url);
+        if (!data.coupons || data.coupons.length === 0) {
+          container.innerHTML = `
+            <div class="card empty-state">
+              <div class="empty-state-icon">${getIconSvg('inbox')}</div>
+              <div class="empty-state-title">No coupons found</div>
+              <p class="empty-state-desc">Purchase meal coupons or adjust your filters to see issued coupons.</p>
+              <a href="/student/buy-coupon.html" class="btn btn-primary btn-sm mt-3">Buy Meal Coupons</a>
+            </div>
+          `;
+          return;
+        }
+
+        const groups = {};
+        data.coupons.forEach(c => {
+          const dStr = c.meal_date.substring(0, 10);
+          if (!groups[dStr]) groups[dStr] = [];
+          groups[dStr].push(c);
+        });
+
+        container.innerHTML = '';
+
+        for (const [dateStr, coupons] of Object.entries(groups)) {
+          const groupCard = document.createElement('div');
+          groupCard.className = 'card';
+          groupCard.innerHTML = `
+            <div class="card-header">
+              <h3 class="card-title tabular-nums">${formatDate(dateStr)}</h3>
+              <span class="meta-pill">${coupons.length} Meal${coupons.length > 1 ? 's' : ''}</span>
+            </div>
+            <div class="grid-2" style="gap: 12px;" id="group-${dateStr}"></div>
+          `;
+
+          container.appendChild(groupCard);
+          const gridEl = groupCard.querySelector(`#group-${dateStr}`);
+
+          coupons.forEach(c => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'coupon-card';
+
+            const canSkip = (c.status === 'active');
+            itemDiv.innerHTML = `
+              <div>
+                <div style="font-weight: 600; text-transform: capitalize; font-size: 14px; color: var(--text-main);">
+                  ${escapeHtml(c.meal_type)}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Source: ${escapeHtml(c.source)}${c.claimed_at ? ` &middot; Claimed ${c.claimed_at.substring(11, 16)}` : ''}
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span>
+                ${canSkip ? `<button class="btn btn-sm btn-primary" onclick="openDiningPass(${c.id}, '${escapeHtml(c.meal_type)}', '${dateStr}')">Pass</button>` : ''}
+                ${canSkip ? `<button class="btn btn-sm btn-secondary" onclick="skipCoupon(${c.id})">Skip</button>` : ''}
+              </div>
+            `;
+            gridEl.appendChild(itemDiv);
+          });
+        }
+      } catch (err) {
+        container.innerHTML = `<p style="color: var(--danger);">Failed to load coupons: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    function openDiningPass(couponId, mealType, dateStr) {
+      document.getElementById('pass-roll').textContent = currentUser ? `${currentUser.roll_no} · ${currentUser.name}` : 'IIIT Student';
+      document.getElementById('pass-meal').textContent = mealType;
+      document.getElementById('pass-date').textContent = formatDate(dateStr);
+      const code = `CPN-${String(couponId).padStart(4, '0')}`;
+      document.getElementById('pass-code').textContent = `#${code}`;
+      document.getElementById('pass-qr').innerHTML = buildPassPatternSvg(`IIIT-MESS:${code}:${mealType}:${dateStr}`, 144);
+      document.getElementById('pass-modal').classList.add('active');
+    }
+
+    function closePassModal() {
+      document.getElementById('pass-modal').classList.remove('active');
+    }
+
+    async function skipCoupon(couponId) {
+      if (!confirm('Skip this meal coupon? Once skipped, this cannot be undone.')) return;
+      try {
+        const res = await api(`/api/student/coupons/${couponId}/skip`, { method: 'POST' });
+        showToast(res.message, 'success');
+        loadCoupons();
+      } catch (err) {}
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Menu - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link active">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Menu Management</h2>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadAdminMenu()">Refresh</button>
+      </header>
+
+      <main class="page-body">
+        <div class="card card-flush">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Weekly Timetable Editor</h3>
+              <p class="card-subtitle">
+                Select Edit on any meal cell to update items. Changes appear immediately for students.
+              </p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Day</th>
+                  <th>Breakfast</th>
+                  <th>Lunch</th>
+                  <th>Snacks</th>
+                  <th>Dinner</th>
+                </tr>
+              </thead>
+              <tbody id="menu-table-body">
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading timetable...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="edit-menu-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal-menu-title">Edit Menu Items</h4>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-menu-id">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="edit-menu-items">Items (comma separated)</label>
+          <textarea id="edit-menu-items" class="form-textarea" rows="4" required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="save-menu-btn" onclick="saveMenuItem()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let menuItemsList = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+      loadAdminMenu();
+    });
+
+    async function loadAdminMenu() {
+      const tbody = document.getElementById('menu-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading timetable...</td></tr>';
+
+      try {
+        const data = await api('/api/student/menu');
+        menuItemsList = data.menu || [];
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const meals = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+        const map = {};
+        days.forEach(d => {
+          map[d] = {};
+          meals.forEach(m => map[d][m] = null);
+        });
+
+        menuItemsList.forEach(item => {
+          if (map[item.day_of_week]) map[item.day_of_week][item.meal_type] = item;
+        });
+
+        tbody.innerHTML = '';
+
+        days.forEach(day => {
+          const tr = document.createElement('tr');
+          let cellsHtml = `<td class="nowrap"><strong>${day}</strong></td>`;
+
+          meals.forEach(meal => {
+            const entry = map[day][meal];
+            if (entry) {
+              cellsHtml += `
+                <td style="vertical-align: top;">
+                  <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">${escapeHtml(entry.items)}</div>
+                  <button class="btn btn-sm btn-secondary" onclick="openEditModal(${entry.id}, '${day}', '${meal}', '${escapeHtml(entry.items).replace(/'/g, "\\'")}')">
+                    Edit
+                  </button>
+                </td>
+              `;
+            } else {
+              cellsHtml += '<td>-</td>';
+            }
+          });
+
+          tr.innerHTML = cellsHtml;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger);">Failed to load menu: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function openEditModal(id, day, meal, items) {
+      document.getElementById('edit-menu-id').value = id;
+      document.getElementById('modal-menu-title').textContent = `Edit ${day} (${meal})`;
+      document.getElementById('edit-menu-items').value = items;
+      document.getElementById('edit-menu-modal').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-menu-modal').classList.remove('active');
+    }
+
+    async function saveMenuItem() {
+      const id = document.getElementById('edit-menu-id').value;
+      const items = document.getElementById('edit-menu-items').value.trim();
+      const saveBtn = document.getElementById('save-menu-btn');
+
+      if (!items) {
+        showToast('Menu items cannot be empty.', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await api(`/api/admin/menu/${id}`, {
+          method: 'PUT',
+          body: { items }
+        });
+
+        showToast(res.message, 'success');
+        closeEditModal();
+        loadAdminMenu();
+      } catch (err) {
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+      }
+    }
+  </script>
+</body>
+</html>

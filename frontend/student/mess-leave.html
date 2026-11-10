@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mess Leave - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link active">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Mess Leave</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Apply for Mess Leave</h3>
+              <p class="card-subtitle">Approved leaves pause active meal coupons for those dates.</p>
+            </div>
+          </div>
+          <form id="leave-form">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="leave_start">Start Date *</label>
+                <input type="date" id="leave_start" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="leave_end">End Date *</label>
+                <input type="date" id="leave_end" class="form-input" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave_reason">Reason *</label>
+              <textarea id="leave_reason" class="form-textarea" placeholder="Brief reason (e.g. going home, medical leave, academic trip)..." required></textarea>
+            </div>
+
+            <button type="submit" id="submit-leave-btn" class="btn btn-primary">
+              Submit Leave Request
+            </button>
+          </form>
+        </div>
+
+        <div class="card card-flush">
+          <div class="card-header">
+            <h3 class="card-title">Leave History</h3>
+            <button class="btn btn-secondary btn-sm" onclick="loadLeaves()">Refresh</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Reason</th>
+                  <th>Applied On</th>
+                  <th>Status</th>
+                  <th>Reviewed By</th>
+                </tr>
+              </thead>
+              <tbody id="leaves-table-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading leave records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['student']);
+      initLeaveDates();
+      loadLeaves();
+    });
+
+    function initLeaveDates() {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      const startEl = document.getElementById('leave_start');
+      const endEl = document.getElementById('leave_end');
+
+      startEl.min = today;
+      startEl.value = today;
+      endEl.min = today;
+      endEl.value = today;
+
+      startEl.addEventListener('change', () => {
+        endEl.min = startEl.value;
+        if (endEl.value < startEl.value) endEl.value = startEl.value;
+      });
+    }
+
+    async function loadLeaves() {
+      const tbody = document.getElementById('leaves-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading leave records...</td></tr>';
+
+      try {
+        const data = await api('/api/student/leave');
+        if (!data.leaves || data.leaves.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">No leave applications found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        data.leaves.forEach(l => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="nowrap tabular-nums"><strong>${formatDate(l.start_date)}</strong></td>
+            <td class="nowrap tabular-nums"><strong>${formatDate(l.end_date)}</strong></td>
+            <td>${escapeHtml(l.reason || '-')}</td>
+            <td class="nowrap tabular-nums">${formatDate(l.created_at)}</td>
+            <td class="nowrap"><span class="badge badge-${l.status}">${escapeHtml(l.status)}</span></td>
+            <td>${escapeHtml(l.approved_by_name || '-')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger);">Failed to load leave history: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    const form = document.getElementById('leave-form');
+    const submitBtn = document.getElementById('submit-leave-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const start_date = document.getElementById('leave_start').value;
+      const end_date = document.getElementById('leave_end').value;
+      const reason = document.getElementById('leave_reason').value.trim();
+
+      if (!start_date || !end_date || !reason) {
+        showToast('Please fill all fields.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const res = await api('/api/student/leave', {
+          method: 'POST',
+          body: { start_date, end_date, reason }
+        });
+
+        showToast(res.message, 'success');
+        document.getElementById('leave_reason').value = '';
+        loadLeaves();
+      } catch (err) {
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Leave Request';
+      }
+    });
+  </script>
+</body>
+</html>

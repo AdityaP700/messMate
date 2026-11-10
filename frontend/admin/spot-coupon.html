@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Issue Spot Coupon - IIIT Mess Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Admin Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/admin/manage-menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Menu Management
+        </a>
+        <a href="/admin/verify-payments.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Verify Payments
+        </a>
+        <a href="/admin/mark-claims.html" class="nav-link">
+          <span class="nav-icon" data-icon="check"></span> Mark Claims
+        </a>
+        <a href="/admin/spot-coupon.html" class="nav-link active">
+          <span class="nav-icon" data-icon="ticket"></span> Spot Coupons
+        </a>
+        <a href="/admin/leave-requests.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Leave Requests
+        </a>
+        <a href="/admin/complaints.html" class="nav-link">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/admin/students.html" class="nav-link">
+          <span class="nav-icon" data-icon="users"></span> Student Directory
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AD</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Issue Spot Coupon</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Walk-In Dining Purchase</h3>
+                <p class="card-subtitle">
+                  Issues and claims a single-meal coupon with cash payment recorded automatically.
+                </p>
+              </div>
+            </div>
+
+            <form id="spot-coupon-form">
+              <div class="form-group">
+                <label class="form-label" for="student_roll_no">Student Roll Number *</label>
+                <input
+                  type="text"
+                  id="student_roll_no"
+                  class="form-input"
+                  placeholder="e.g. B121001"
+                  required
+                  autocomplete="off"
+                >
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="meal_type">Meal Type *</label>
+                <select id="meal_type" class="form-select" required>
+                  <option value="">Choose meal</option>
+                  <option value="breakfast">Breakfast (₹30)</option>
+                  <option value="lunch">Lunch (₹50)</option>
+                  <option value="snacks">Snacks (₹15)</option>
+                  <option value="dinner">Dinner (₹50)</option>
+                </select>
+              </div>
+
+              <button type="submit" id="issue-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Issue Spot Coupon & Mark Claimed
+              </button>
+            </form>
+          </div>
+
+          <div class="card" id="confirmation-card" style="display: none; border-left: 4px solid var(--accent);">
+            <div class="card-header">
+              <h3 class="card-title" style="color: var(--accent);">Spot Coupon Issued</h3>
+              <span class="badge badge-active">Claimed & Paid</span>
+            </div>
+            <div id="confirmation-details" class="flex flex-col gap-2" style="font-size: 13.5px;"></div>
+            <button class="btn btn-secondary btn-sm mt-3" onclick="resetForm()">Issue Another</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['admin', 'superadmin']);
+    });
+
+    const form = document.getElementById('spot-coupon-form');
+    const issueBtn = document.getElementById('issue-btn');
+    const confirmCard = document.getElementById('confirmation-card');
+    const confirmDetails = document.getElementById('confirmation-details');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const student_roll_no = document.getElementById('student_roll_no').value.trim().toUpperCase();
+      const meal_type = document.getElementById('meal_type').value;
+
+      if (!student_roll_no || !meal_type) {
+        showToast('Please enter roll number and select meal type.', 'error');
+        return;
+      }
+
+      issueBtn.disabled = true;
+      issueBtn.textContent = 'Processing...';
+
+      try {
+        const res = await api('/api/admin/spot-coupon', {
+          method: 'POST',
+          body: { student_roll_no, meal_type }
+        });
+
+        showToast(res.message, 'success');
+
+        confirmDetails.innerHTML = `
+          <div><strong>Student Roll:</strong> ${escapeHtml(student_roll_no)}</div>
+          <div><strong>Meal Type:</strong> <span style="text-transform: capitalize;">${escapeHtml(res.meal_type)}</span></div>
+          <div class="tabular-nums"><strong>Meal Date:</strong> ${formatDate(res.meal_date)}</div>
+          <div class="tabular-nums"><strong>Cash Collected:</strong> <strong style="color: var(--accent);">${formatCurrency(res.amount)}</strong></div>
+          <div class="tabular-nums"><strong>Coupon ID:</strong> #${res.coupon_id} &middot; <strong>Payment ID:</strong> #${res.payment_id}</div>
+          <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 6px;">
+            Approved for dining hall entry immediately.
+          </div>
+        `;
+        confirmCard.style.display = 'block';
+        form.reset();
+      } catch (err) {
+      } finally {
+        issueBtn.disabled = false;
+        issueBtn.textContent = 'Issue Spot Coupon & Mark Claimed';
+      }
+    });
+
+    function resetForm() {
+      confirmCard.style.display = 'none';
+      document.getElementById('student_roll_no').focus();
+    }
+  </script>
+</body>
+</html>

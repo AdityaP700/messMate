@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaints - IIIT Mess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Student Portal</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/student/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+        </a>
+        <a href="/student/menu.html" class="nav-link">
+          <span class="nav-icon" data-icon="menu"></span> Weekly Menu
+        </a>
+        <a href="/student/buy-coupon.html" class="nav-link">
+          <span class="nav-icon" data-icon="ticket"></span> Buy Coupons
+        </a>
+        <a href="/student/my-coupons.html" class="nav-link">
+          <span class="nav-icon" data-icon="tag"></span> My Coupons
+        </a>
+        <a href="/student/mess-leave.html" class="nav-link">
+          <span class="nav-icon" data-icon="leave"></span> Mess Leave
+        </a>
+        <a href="/student/complaints.html" class="nav-link active">
+          <span class="nav-icon" data-icon="alert"></span> Complaints
+        </a>
+        <a href="/student/payment-history.html" class="nav-link">
+          <span class="nav-icon" data-icon="payment"></span> Payment History
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">ST</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Student</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Complaints & Feedback</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Raise Meal Complaint</h3>
+              <p class="card-subtitle">
+                Complaints can only be submitted during active meal serving hours (IST).
+              </p>
+            </div>
+            <span id="window-status-badge" class="badge badge-pending">Checking Hours</span>
+          </div>
+
+          <div id="meal-window-alert" style="display: none; padding: 12px 14px; margin-bottom: 16px; border-radius: 8px; font-size: 13px;"></div>
+
+          <form id="complaint-form">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="complaint_meal">Meal Type *</label>
+                <select id="complaint_meal" class="form-select" required onchange="checkActiveMealWindow()">
+                  <option value="">Select Meal</option>
+                  <option value="breakfast">Breakfast (07:30–09:00)</option>
+                  <option value="lunch">Lunch (12:00–14:00)</option>
+                  <option value="snacks">Snacks (16:00–17:00)</option>
+                  <option value="dinner">Dinner (19:30–21:00)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="complaint_category">Category *</label>
+                <select id="complaint_category" class="form-select" required>
+                  <option value="">Select Category</option>
+                  <option value="food_quality">Food Quality</option>
+                  <option value="hygiene">Hygiene & Cleanliness</option>
+                  <option value="quantity">Shortage / Quantity</option>
+                  <option value="staff_behavior">Staff Behavior</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="complaint_desc">Description *</label>
+              <textarea id="complaint_desc" class="form-textarea" placeholder="Describe the issue clearly (item, counter, details)..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="complaint_anon">
+                <span>Submit anonymously (hides your name and roll number from mess staff)</span>
+              </label>
+            </div>
+
+            <button type="submit" id="submit-complaint-btn" class="btn btn-danger">
+              Submit Complaint
+            </button>
+          </form>
+        </div>
+
+        <div class="card card-flush">
+          <div class="card-header">
+            <h3 class="card-title">Past Complaints</h3>
+            <button class="btn btn-secondary btn-sm" onclick="loadComplaints()">Refresh</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Meal</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Response</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody id="complaints-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading complaints...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const schedules = {
+      breakfast: { start: 7 * 60 + 30, end: 9 * 60 },
+      lunch:     { start: 12 * 60,     end: 14 * 60 },
+      snacks:    { start: 16 * 60,     end: 17 * 60 },
+      dinner:    { start: 19 * 60 + 30, end: 21 * 60 }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['student']);
+      checkActiveMealWindow();
+      loadComplaints();
+    });
+
+    function getMinutesNowIST() {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      }).formatToParts(new Date());
+
+      const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+      const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+      return (hour % 24) * 60 + minute;
+    }
+
+    function checkActiveMealWindow() {
+      const currentMinutes = getMinutesNowIST();
+      let activeMeal = null;
+
+      for (const [meal, timing] of Object.entries(schedules)) {
+        if (currentMinutes >= timing.start && currentMinutes <= timing.end) {
+          activeMeal = meal;
+          break;
+        }
+      }
+
+      const mealSelect = document.getElementById('complaint_meal');
+      const badge = document.getElementById('window-status-badge');
+      const alertBox = document.getElementById('meal-window-alert');
+      const submitBtn = document.getElementById('submit-complaint-btn');
+
+      if (activeMeal) {
+        badge.className = 'badge badge-active';
+        badge.textContent = `Serving: ${activeMeal}`;
+        if (!mealSelect.value) mealSelect.value = activeMeal;
+        alertBox.style.display = 'none';
+        submitBtn.disabled = false;
+      } else {
+        badge.className = 'badge badge-rejected';
+        badge.textContent = 'Outside Meal Hours';
+        alertBox.style.display = 'block';
+        alertBox.style.background = 'var(--danger-light)';
+        alertBox.style.color = 'var(--danger)';
+        alertBox.style.border = '1px solid #f5c2c0';
+        alertBox.innerHTML = '<strong>Serving hours closed:</strong> Complaints can only be raised during Breakfast (07:30–09:00), Lunch (12:00–14:00), Snacks (16:00–17:00), or Dinner (19:30–21:00) IST.';
+        submitBtn.disabled = true;
+      }
+    }
+
+    async function loadComplaints() {
+      const tbody = document.getElementById('complaints-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading complaints...</td></tr>';
+
+      try {
+        const data = await api('/api/student/complaints');
+        if (!data.complaints || data.complaints.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 28px;">No complaints recorded.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        data.complaints.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="nowrap tabular-nums">${formatDate(c.meal_date)}</td>
+            <td class="nowrap" style="text-transform: capitalize;"><strong>${escapeHtml(c.meal_type)}</strong></td>
+            <td class="nowrap" style="text-transform: capitalize;">${escapeHtml((c.category || '').replace('_', ' '))}</td>
+            <td>${escapeHtml(c.description)}</td>
+            <td class="nowrap"><span class="badge badge-${c.status}">${escapeHtml(c.status.replace('_', ' '))}</span></td>
+            <td>${c.response ? `${escapeHtml(c.response)} <span style="color:var(--text-muted);font-size:12px;">(${escapeHtml(c.responded_by_name || 'Admin')})</span>` : '<span style="color:var(--text-light);">Awaiting response</span>'}</td>
+            <td class="nowrap tabular-nums">${c.resolved_at ? formatDate(c.resolved_at) : '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger);">Failed to load complaints: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    const form = document.getElementById('complaint-form');
+    const submitBtn = document.getElementById('submit-complaint-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const meal_type = document.getElementById('complaint_meal').value;
+      const category = document.getElementById('complaint_category').value;
+      const description = document.getElementById('complaint_desc').value.trim();
+      const is_anonymous = document.getElementById('complaint_anon').checked;
+
+      if (!meal_type || !category || !description) {
+        showToast('Please fill all fields.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const res = await api('/api/student/complaints', {
+          method: 'POST',
+          body: { meal_type, category, description, is_anonymous }
+        });
+
+        showToast(res.message, 'success');
+        document.getElementById('complaint_desc').value = '';
+        document.getElementById('complaint_anon').checked = false;
+        loadComplaints();
+      } catch (err) {
+      } finally {
+        checkActiveMealWindow();
+        submitBtn.textContent = 'Submit Complaint';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Reports - IIIT Mess Super Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-icon="brand"></span>
+          <div>
+            IIIT Mess
+            <small>Super Admin</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/superadmin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="dashboard"></span> Overview
+        </a>
+        <a href="/superadmin/daily-reports.html" class="nav-link active">
+          <span class="nav-icon" data-icon="report"></span> Daily Reports
+        </a>
+        <a href="/superadmin/manage-admins.html" class="nav-link">
+          <span class="nav-icon" data-icon="shield"></span> Manage Admins
+        </a>
+        <a href="/superadmin/settings.html" class="nav-link">
+          <span class="nav-icon" data-icon="settings"></span> Mess Settings
+        </a>
+        <div class="nav-section-label">Workspace</div>
+        <a href="/admin/dashboard.html" class="nav-link">
+          <span class="nav-icon" data-icon="switch"></span> Admin View
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">SA</div>
+        <div class="user-profile-badge">
+          <span class="user-name" id="sidebar-user-name">Loading...</span>
+          <span class="user-role" id="sidebar-user-roll">Super Admin</span>
+        </div>
+        <button class="logout-icon-btn" title="Sign out" aria-label="Sign out" data-icon="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="flex items-center gap-3">
+          <button class="mobile-menu-btn" aria-label="Toggle menu" data-icon="hamburger"></button>
+          <h2 class="page-title">Daily Reports</h2>
+        </div>
+      </header>
+
+      <main class="page-body">
+        <div class="card" style="padding: 14px 18px;">
+          <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 12px;">
+            <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+              <label for="report-date-picker" class="form-label" style="margin: 0;">Report Date</label>
+              <input type="date" id="report-date-picker" class="form-input" style="width: auto;">
+              <button class="btn btn-primary btn-sm" onclick="generateReportForDate()">Load Report</button>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadRecentReports()">Refresh Archive</button>
+          </div>
+        </div>
+
+        <div class="card" id="report-display-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Daily Operations (<span id="rep-date-title">Date</span>)</h3>
+              <p class="card-subtitle">Generated: <span id="rep-generated-at">-</span></p>
+            </div>
+            <span class="badge badge-active">Audited</span>
+          </div>
+
+          <div class="grid-4 mb-4">
+            <div class="stat-card">
+              <div>
+                <div class="stat-value" id="rep-revenue" style="color: var(--accent);">₹0.00</div>
+                <div class="stat-label">Daily Revenue</div>
+              </div>
+              <div class="stat-icon" style="background: var(--accent-light); color: var(--accent);" data-icon="wallet"></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-value" id="rep-total-meals" style="color: var(--primary);">0</div>
+                <div class="stat-label">Meals Served</div>
+              </div>
+              <div class="stat-icon" data-icon="utensils"></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-value" id="rep-skips" style="color: var(--warning);">0</div>
+                <div class="stat-label">Meal Skips</div>
+              </div>
+              <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);" data-icon="clock"></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-value" id="rep-spots" style="color: #7c3aed;">0</div>
+                <div class="stat-label">Spot Coupons</div>
+              </div>
+              <div class="stat-icon" style="background: #f3e8ff; color: #7c3aed;" data-icon="ticket"></div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="border: 1px solid var(--border-subtle); border-radius: 8px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Breakfast</th>
+                  <th>Lunch</th>
+                  <th>Snacks</th>
+                  <th>Dinner</th>
+                  <th>Complaints</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="tabular-nums">
+                  <td id="rep-breakfast" style="font-weight: 700; font-size: 15px;">0</td>
+                  <td id="rep-lunch" style="font-weight: 700; font-size: 15px;">0</td>
+                  <td id="rep-snacks" style="font-weight: 700; font-size: 15px;">0</td>
+                  <td id="rep-dinner" style="font-weight: 700; font-size: 15px;">0</td>
+                  <td id="rep-complaints" style="font-weight: 700; font-size: 15px; color: var(--danger);">0</td>
+                  <td id="rep-complaints-resolved" style="font-weight: 700; font-size: 15px; color: var(--accent);">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card card-flush">
+          <div class="card-header">
+            <h3 class="card-title">Archived Daily Reports</h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Breakfast</th>
+                  <th>Lunch</th>
+                  <th>Snacks</th>
+                  <th>Dinner</th>
+                  <th>Skips</th>
+                  <th>Spot</th>
+                  <th>Revenue</th>
+                  <th>Complaints</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="past-reports-table-body">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Loading past reports...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth(['superadmin']);
+
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      document.getElementById('report-date-picker').value = today;
+
+      generateReportForDate(today);
+      loadRecentReports();
+    });
+
+    async function generateReportForDate(overrideDate) {
+      const dateVal = overrideDate || document.getElementById('report-date-picker').value;
+      if (!dateVal) {
+        showToast('Please pick a date.', 'error');
+        return;
+      }
+
+      try {
+        const data = await api(`/api/admin/reports/daily?date=${dateVal}`);
+        const r = data.report;
+        if (!r) return;
+
+        document.getElementById('rep-date-title').textContent = formatDate(r.report_date);
+        document.getElementById('rep-generated-at').textContent = r.generated_at ? new Date(r.generated_at).toLocaleString('en-IN') : '-';
+        document.getElementById('rep-revenue').textContent = formatCurrency(r.revenue);
+
+        const totalMeals = (r.total_breakfast || 0) + (r.total_lunch || 0) + (r.total_snacks || 0) + (r.total_dinner || 0);
+        document.getElementById('rep-total-meals').textContent = totalMeals;
+        document.getElementById('rep-skips').textContent = r.total_skips || 0;
+        document.getElementById('rep-spots').textContent = r.total_spot || 0;
+
+        document.getElementById('rep-breakfast').textContent = r.total_breakfast || 0;
+        document.getElementById('rep-lunch').textContent = r.total_lunch || 0;
+        document.getElementById('rep-snacks').textContent = r.total_snacks || 0;
+        document.getElementById('rep-dinner').textContent = r.total_dinner || 0;
+        document.getElementById('rep-complaints').textContent = r.total_complaints || 0;
+        document.getElementById('rep-complaints-resolved').textContent = r.complaints_resolved || 0;
+
+        if (!overrideDate) showToast(`Report for ${formatDate(r.report_date)} loaded.`, 'success');
+      } catch (err) {
+        console.error('Report error:', err);
+      }
+    }
+
+    async function loadRecentReports() {
+      const tbody = document.getElementById('past-reports-table-body');
+      try {
+        const data = await api('/api/superadmin/reports');
+        const list = data.reports || [];
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 28px;">No archived daily reports yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.className = 'tabular-nums';
+          tr.innerHTML = `
+            <td class="nowrap"><strong>${formatDate(r.report_date)}</strong></td>
+            <td>${r.total_breakfast}</td>
+            <td>${r.total_lunch}</td>
+            <td>${r.total_snacks}</td>
+            <td>${r.total_dinner}</td>
+            <td>${r.total_skips}</td>
+            <td>${r.total_spot}</td>
+            <td class="nowrap" style="color: var(--accent); font-weight: 600;">${formatCurrency(r.revenue)}</td>
+            <td class="nowrap">${r.total_complaints} (${r.complaints_resolved} res.)</td>
+            <td class="nowrap">
+              <button class="btn btn-sm btn-secondary" onclick="viewSpecificReport('${r.report_date}')">View</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="10" style="color: var(--danger);">Failed to load historical reports.</td></tr>`;
+      }
+    }
+
+    function viewSpecificReport(dateStr) {
+      document.getElementById('report-date-picker').value = dateStr;
+      generateReportForDate(dateStr);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
